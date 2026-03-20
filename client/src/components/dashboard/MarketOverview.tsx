@@ -1,8 +1,8 @@
 import React from 'react';
 import { useIndices } from '@/hooks/use-stocks';
 import { useLiveMarket } from '@/hooks/use-live-market';
-import { cn, formatCurrency } from '@/lib/format';
-import { TrendingUp, TrendingDown, Activity } from 'lucide-react';
+import { cn } from '@/lib/format';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 
 export function MarketOverview() {
   const { data: initialIndices, isLoading } = useIndices();
@@ -10,9 +10,9 @@ export function MarketOverview() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 animate-pulse">
-        {[1, 2, 3, 4].map(i => (
-          <div key={i} className="h-32 bg-card rounded-2xl border border-border/50" />
+      <div className="grid grid-cols-3 gap-3">
+        {[1,2,3].map(i => (
+          <div key={i} className="h-24 bg-secondary rounded-2xl animate-pulse" />
         ))}
       </div>
     );
@@ -24,42 +24,37 @@ export function MarketOverview() {
   }) || [];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
-      {displayIndices.map((index) => {
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {displayIndices.map((index, i) => {
         const isPositive = index.change >= 0;
         return (
-          <div 
-            key={index.name}
-            className="group bg-card rounded-2xl p-6 border border-border/50 shadow-sm hover:shadow-lg transition-all duration-300 relative overflow-hidden"
+          <div key={index.name}
+            className={cn(
+              "relative rounded-2xl p-5 border overflow-hidden transition-all duration-300 animate-slide-up",
+              "bg-card border-border hover:border-primary/30"
+            )}
+            style={{ animationDelay: `${i * 80}ms` }}
           >
-            {/* Background gradient hint based on positive/negative */}
             <div className={cn(
-              "absolute -right-8 -top-8 w-32 h-32 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity",
+              "absolute inset-0 opacity-5",
               isPositive ? "bg-[hsl(var(--market-up))]" : "bg-[hsl(var(--market-down))]"
             )} />
-
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-                <Activity className="w-4 h-4" />
-                {index.name}
-              </h3>
-              <div className={cn(
-                "p-2 rounded-lg",
-                isPositive ? "bg-[hsl(var(--market-up-bg))] text-[hsl(var(--market-up))]" : "bg-[hsl(var(--market-down-bg))] text-[hsl(var(--market-down))]"
-              )}>
-                {isPositive ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+            <div className="relative">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{index.name}</span>
+                <span className={cn(
+                  "flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-md",
+                  isPositive ? "bg-[hsl(var(--market-up-bg))] text-[hsl(var(--market-up))]" : "bg-[hsl(var(--market-down-bg))] text-[hsl(var(--market-down))]"
+                )}>
+                  {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  {isPositive ? '+' : ''}{index.changePercent.toFixed(2)}%
+                </span>
               </div>
-            </div>
-            
-            <div className="space-y-1">
-              <p className="text-2xl font-display font-bold font-mono tracking-tight text-foreground">
-                {index.value.toLocaleString('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 2 })}
+              <p className="text-2xl font-display font-bold font-mono tracking-tight">
+                {index.value > 0 ? index.value.toLocaleString('en-IN', { maximumFractionDigits: 2 }) : '—'}
               </p>
-              <p className={cn(
-                "text-sm font-semibold font-mono",
-                isPositive ? "text-[hsl(var(--market-up))]" : "text-[hsl(var(--market-down))]"
-              )}>
-                {isPositive ? '+' : ''}{index.change.toFixed(2)} ({isPositive ? '+' : ''}{index.changePercent.toFixed(2)}%)
+              <p className={cn("text-xs font-mono mt-1", isPositive ? "text-[hsl(var(--market-up))]" : "text-[hsl(var(--market-down))]")}>
+                {isPositive ? '+' : ''}{index.change.toFixed(2)} today
               </p>
             </div>
           </div>

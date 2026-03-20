@@ -18,99 +18,81 @@ export function ExplorePage() {
 
   const displayData = query.length >= 2 ? searchResults : allStocks;
   const isLoading = query.length >= 2 ? isSearching : isAllLoading;
+  const isInWatchlist = (symbol: string) => watchlist?.some(w => w.symbol === symbol);
 
   const handleAddWatchlist = async (e: React.MouseEvent, symbol: string, company: string) => {
-    e.stopPropagation(); // prevent row click from firing
+    e.stopPropagation();
     try {
       await addWatchlist.mutateAsync({ symbol, companyName: company });
-      toast({ title: "Added to Watchlist", description: `${symbol} has been added.` });
+      toast({ title: `${symbol} added to watchlist` });
     } catch (err: any) {
       toast({ title: "Failed", description: err.message, variant: 'destructive' });
     }
   };
 
-  const isSymbolInWatchlist = (symbol: string) => {
-    return watchlist?.some(w => w.symbol === symbol);
-  };
-
   return (
-    <div className="space-y-8 pb-12 animate-in fade-in duration-500">
-      <div className="relative max-w-2xl mx-auto">
-        <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 blur-xl rounded-full opacity-50 pointer-events-none" />
-        
-        <div className="relative bg-card border-2 border-border shadow-2xl shadow-primary/5 rounded-2xl flex items-center p-2 transition-all focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10">
-          <Search className="w-6 h-6 text-muted-foreground ml-3" />
-          <input
-            type="text"
-            placeholder="Search stocks by symbol or company name..."
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            className="w-full bg-transparent border-none text-lg px-4 py-3 focus:outline-none placeholder:text-muted-foreground/70"
-          />
-          {isLoading && <Loader2 className="w-5 h-5 text-primary animate-spin mr-3" />}
-        </div>
+    <div className="space-y-5 pb-12 animate-slide-up">
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder="Search by symbol or company…"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          className="w-full bg-card border border-border rounded-2xl pl-11 pr-12 py-3.5 text-sm focus:outline-none focus:border-primary transition-colors placeholder:text-muted-foreground"
+        />
+        {isLoading && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary animate-spin" />}
       </div>
 
-      <div className="bg-card border border-border/50 rounded-3xl shadow-sm overflow-hidden">
-        <table className="w-full text-left border-collapse">
-          <thead className="bg-muted/30 border-b border-border text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-            <tr>
-              <th className="px-6 py-4">Symbol</th>
-              <th className="px-6 py-4 hidden sm:table-cell">Company</th>
-              <th className="px-6 py-4 text-right">Price</th>
-              <th className="px-6 py-4 text-center w-24">Watchlist</th>
+      {/* Table */}
+      <div className="bg-card border border-border rounded-2xl overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-xs text-muted-foreground uppercase tracking-wider">
+              <th className="px-6 py-3.5 text-left font-semibold">Symbol</th>
+              <th className="px-6 py-3.5 text-left font-semibold hidden sm:table-cell">Company</th>
+              <th className="px-6 py-3.5 text-right font-semibold">Price</th>
+              <th className="px-6 py-3.5 text-center font-semibold w-16">+</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border/50">
-            {displayData?.map((stock) => {
-              const inWatchlist = isSymbolInWatchlist(stock.symbol);
+          <tbody className="divide-y divide-border">
+            {displayData?.map((stock, i) => {
+              const inWL = isInWatchlist(stock.symbol);
               return (
-                <tr
-                  key={stock.symbol}
-                  className="hover:bg-muted/20 transition-colors group cursor-pointer"
+                <tr key={stock.symbol}
+                  className="hover:bg-secondary/40 transition-colors cursor-pointer group"
+                  style={{ animationDelay: `${i * 30}ms` }}
                   onClick={() => navigate(`/stock/${stock.symbol}`)}
                 >
                   <td className="px-6 py-4">
-                    <span className="font-bold text-foreground group-hover:text-primary transition-colors">
+                    <span className="font-display font-bold text-foreground group-hover:text-primary transition-colors">
                       {stock.symbol}
                     </span>
                   </td>
-                  <td className="px-6 py-4 hidden sm:table-cell text-muted-foreground text-sm">
-                    {stock.company}
-                  </td>
+                  <td className="px-6 py-4 hidden sm:table-cell text-muted-foreground text-xs">{stock.company}</td>
                   <td className="px-6 py-4 text-right">
-                    <LivePrice
-                      symbol={stock.symbol}
-                      initialPrice={stock.price}
-                      initialChangePercent={stock.changePercent}
-                      showChange={true}
-                      className="justify-end"
-                    />
+                    <LivePrice symbol={stock.symbol} initialPrice={stock.price} initialChangePercent={stock.changePercent} showChange className="justify-end" />
                   </td>
                   <td className="px-6 py-4 text-center">
                     <button
-                      onClick={(e) => !inWatchlist && handleAddWatchlist(e, stock.symbol, stock.company)}
-                      disabled={inWatchlist || addWatchlist.isPending}
+                      onClick={(e) => !inWL && handleAddWatchlist(e, stock.symbol, stock.company)}
+                      disabled={inWL || addWatchlist.isPending}
                       className={cn(
-                        "p-2 rounded-xl transition-all",
-                        inWatchlist
-                          ? "text-yellow-500 bg-yellow-500/10 cursor-not-allowed"
-                          : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                        "w-7 h-7 rounded-lg flex items-center justify-center mx-auto transition-all",
+                        inWL ? "text-yellow-500" : "text-muted-foreground hover:text-primary hover:bg-primary/10"
                       )}
                     >
-                      <Star className={cn("w-5 h-5", inWatchlist && "fill-current")} />
+                      <Star className={cn("w-4 h-4", inWL && "fill-current")} />
                     </button>
                   </td>
                 </tr>
               );
             })}
-
             {displayData?.length === 0 && !isLoading && (
               <tr>
-                <td colSpan={4} className="px-6 py-16 text-center text-muted-foreground">
-                  <Search className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                  <p className="text-lg font-semibold text-foreground mb-1">No stocks found</p>
-                  <p>Try adjusting your search terms</p>
+                <td colSpan={4} className="px-6 py-16 text-center text-muted-foreground text-sm">
+                  No stocks found for "{query}"
                 </td>
               </tr>
             )}

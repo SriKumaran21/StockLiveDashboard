@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { Send, MessageCircle, Users } from 'lucide-react';
-import { formatCurrency } from '@/lib/format';
+import { Send } from 'lucide-react';
+import { cn } from '@/lib/format';
 
 interface ChatMessage {
   id: string;
@@ -11,12 +11,27 @@ interface ChatMessage {
   createdAt: string;
 }
 
+const AVATAR_COLORS = [
+  'bg-blue-500', 'bg-violet-500', 'bg-orange-500',
+  'bg-teal-500', 'bg-pink-500', 'bg-amber-500',
+];
+
+function avatarColor(name: string) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h += name.charCodeAt(i);
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+
+function formatTime(iso: string) {
+  try { return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+  catch { return ''; }
+}
+
 export function CommunityPage() {
   const { user } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [connected, setConnected] = useState(false);
-  const [onlineCount, setOnlineCount] = useState(1);
   const wsRef = useRef<WebSocket | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -24,140 +39,80 @@ export function CommunityPage() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
     wsRef.current = ws;
-
     ws.onopen = () => {
       setConnected(true);
-      // Authenticate the WebSocket session
-      if (user) {
-        ws.send(JSON.stringify({ type: 'auth', userId: user.id }));
-      }
+      if (user) ws.send(JSON.stringify({ type: 'auth', userId: user.id }));
     };
-
     ws.onclose = () => setConnected(false);
-
-    ws.onmessage = (event) => {
+    ws.onmessage = (e) => {
       try {
-        const parsed = JSON.parse(event.data);
-
-        if (parsed.type === 'chat_history') {
-          setMessages(parsed.data || []);
-        } else if (parsed.type === 'chat_message') {
-          setMessages(prev => [...prev, parsed.data]);
-        }
-        // ignore priceUpdate / indexUpdate — not relevant here
-      } catch (e) {
-        console.error('[Chat] Failed to parse message', e);
-      }
+        const p = JSON.parse(e.data);
+        if (p.type === 'chat_history') setMessages(p.data || []);
+        else if (p.type === 'chat_message') setMessages(prev => [...prev, p.data]);
+      } catch {}
     };
-
-    return () => {
-      ws.close();
-    };
+    return () => ws.close();
   }, [user]);
 
-  // Auto-scroll to latest message
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const sendMessage = () => {
+  const send = () => {
     const text = input.trim();
-    if (!text || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    if (!text || wsRef.current?.readyState !== WebSocket.OPEN) return;
     wsRef.current.send(JSON.stringify({ type: 'chat_message', text }));
     setInput('');
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
-  const formatTime = (iso: string) => {
-    try {
-      return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } catch {
-      return '';
-    }
-  };
-
-  const getInitial = (name: string) => name?.charAt(0)?.toUpperCase() || '?';
-
-  const avatarColor = (name: string) => {
-    const colors = [
-      'from-blue-500 to-blue-600',
-      'from-purple-500 to-purple-600',
-      'from-green-500 to-green-600',
-      'from-orange-500 to-orange-600',
-      'from-pink-500 to-pink-600',
-      'from-teal-500 to-teal-600',
-    ];
-    let hash = 0;
-    for (let i = 0; i < (name?.length || 0); i++) hash += name.charCodeAt(i);
-    return colors[hash % colors.length];
-  };
-
   return (
-    <div className="animate-in fade-in duration-500 h-[calc(100vh-10rem)] flex flex-col gap-4">
+    <div className="h-[calc(100vh-8rem)] flex flex-col animate-slide-up">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <MessageCircle className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold">Community Chat</h2>
-            <p className="text-xs text-muted-foreground">Talk markets with fellow traders</p>
-          </div>
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h1 className="font-display font-bold text-xl">Community</h1>
+          <p className="text-xs text-muted-foreground">Chat with fellow traders in real time</p>
         </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 px-3 py-1.5 rounded-full">
-          <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-          {connected ? 'Live' : 'Disconnected'}
+        <div className={cn(
+          "flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border",
+          connected
+            ? "text-[hsl(var(--market-up))] bg-[hsl(var(--market-up-bg))] border-[hsl(var(--market-up)/0.2)]"
+            : "text-muted-foreground bg-secondary border-border"
+        )}>
+          <span className={cn("w-1.5 h-1.5 rounded-full", connected ? "bg-[hsl(var(--market-up))] animate-pulse" : "bg-muted")} />
+          {connected ? 'Live' : 'Connecting…'}
         </div>
       </div>
 
-      {/* Chat Window */}
-      <div className="flex-1 bg-card border border-border/50 rounded-2xl overflow-hidden flex flex-col shadow-lg">
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      {/* Messages */}
+      <div className="flex-1 bg-card border border-border rounded-2xl overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {messages.length === 0 && (
-            <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
-              <MessageCircle className="w-16 h-16 opacity-10 mb-4" />
-              <p className="text-lg font-semibold text-foreground">No messages yet</p>
-              <p className="text-sm">Be the first to start a conversation!</p>
+            <div className="h-full flex items-center justify-center">
+              <p className="text-sm text-muted-foreground">No messages yet. Say hello!</p>
             </div>
           )}
-
           {messages.map((msg) => {
             const isOwn = msg.userId === user?.id;
             return (
-              <div
-                key={msg.id}
-                className={`flex items-end gap-3 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
-              >
-                {/* Avatar */}
-                <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${avatarColor(msg.username)} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
-                  {getInitial(msg.username)}
+              <div key={msg.id} className={cn("flex items-end gap-2.5", isOwn ? "flex-row-reverse" : "flex-row")}>
+                <div className={cn(
+                  "w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0",
+                  avatarColor(msg.username)
+                )}>
+                  {msg.username.charAt(0).toUpperCase()}
                 </div>
-
-                {/* Bubble */}
-                <div className={`max-w-[70%] ${isOwn ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
-                  {!isOwn && (
-                    <span className="text-xs text-muted-foreground px-1">{msg.username}</span>
-                  )}
-                  <div
-                    className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                      isOwn
-                        ? 'bg-primary text-primary-foreground rounded-br-sm'
-                        : 'bg-muted/50 text-foreground rounded-bl-sm'
-                    }`}
-                  >
+                <div className={cn("flex flex-col gap-1 max-w-[68%]", isOwn ? "items-end" : "items-start")}>
+                  {!isOwn && <span className="text-[11px] text-muted-foreground font-medium px-1">{msg.username}</span>}
+                  <div className={cn(
+                    "px-4 py-2.5 rounded-2xl text-sm leading-relaxed",
+                    isOwn
+                      ? "bg-primary text-primary-foreground rounded-br-sm"
+                      : "bg-secondary text-foreground rounded-bl-sm"
+                  )}>
                     {msg.message}
                   </div>
-                  <span className="text-xs text-muted-foreground px-1">
-                    {formatTime(msg.createdAt)}
-                  </span>
+                  <span className="text-[11px] text-muted-foreground px-1">{formatTime(msg.createdAt)}</span>
                 </div>
               </div>
             );
@@ -166,23 +121,23 @@ export function CommunityPage() {
         </div>
 
         {/* Input */}
-        <div className="border-t border-border/50 p-4 bg-muted/10">
-          <div className="flex items-center gap-3 bg-background border border-border rounded-xl px-4 py-2 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+        <div className="border-t border-border p-3">
+          <div className="flex items-center gap-2 bg-secondary rounded-xl px-4 py-2 focus-within:ring-1 focus-within:ring-primary transition-all">
             <input
               type="text"
-              placeholder={connected ? "Type a message… (Enter to send)" : "Connecting…"}
+              placeholder={connected ? "Type a message…" : "Connecting…"}
               value={input}
               onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
+              onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), send())}
               disabled={!connected}
-              className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground/60 disabled:opacity-50"
+              className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground disabled:opacity-50"
             />
             <button
-              onClick={sendMessage}
+              onClick={send}
               disabled={!connected || !input.trim()}
-              className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors flex-shrink-0"
+              className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-primary-foreground disabled:opacity-30 hover:opacity-90 transition-opacity flex-shrink-0"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
