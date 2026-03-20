@@ -9,6 +9,7 @@ import { useLocation } from 'wouter';
 
 export function ExplorePage() {
   const [query, setQuery] = useState('');
+  const [sector, setSector] = useState<'all' | 'us' | 'in'>('all');
   const [, navigate] = useLocation();
   const { data: searchResults, isLoading: isSearching } = useSearchStocks(query);
   const { data: allStocks, isLoading: isAllLoading } = useAllStocks();
@@ -16,7 +17,12 @@ export function ExplorePage() {
   const addWatchlist = useAddWatchlist();
   const { toast } = useToast();
 
-  const displayData = query.length >= 2 ? searchResults : allStocks;
+  const baseData = query.length >= 2 ? searchResults : allStocks;
+  const displayData = baseData?.filter(s => {
+    if (sector === 'us') return !s.symbol.includes('.');
+    if (sector === 'in') return s.symbol.includes('.NS') || s.symbol.includes('.BO');
+    return true;
+  });
   const isLoading = query.length >= 2 ? isSearching : isAllLoading;
   const isInWatchlist = (symbol: string) => watchlist?.some(w => w.symbol === symbol);
 
@@ -43,6 +49,16 @@ export function ExplorePage() {
           className="w-full bg-card border border-border rounded-2xl pl-11 pr-12 py-3.5 text-sm focus:outline-none focus:border-primary transition-colors placeholder:text-muted-foreground"
         />
         {isLoading && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary animate-spin" />}
+      </div>
+
+      {/* Sector Tabs */}
+      <div className="flex gap-2">
+        {([['all', 'All Markets'], ['us', '🇺🇸 US Stocks'], ['in', '🇮🇳 Indian Stocks']] as const).map(([key, label]) => (
+          <button key={key} onClick={() => setSector(key)}
+            className={cn("px-4 py-2 rounded-xl text-xs font-semibold transition-all",
+              sector === key ? "bg-primary text-black" : "bg-secondary text-muted-foreground hover:text-foreground")}
+          >{label}</button>
+        ))}
       </div>
 
       {/* Table */}

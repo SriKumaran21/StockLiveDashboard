@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { TrendingUp, Mail, Lock, User, Loader2 } from 'lucide-react';
+import { TrendingUp, Mail, Lock, User, Loader2, ArrowRight } from 'lucide-react';
+import { cn } from '@/lib/format';
 
 export function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -8,13 +9,13 @@ export function AuthPage() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
-  
   const { login, register, isLoggingIn, isRegistering } = useAuth();
+
+  const isLoading = isLoggingIn || isRegistering;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
     try {
       if (isLogin) {
         await login({ email, password });
@@ -22,117 +23,122 @@ export function AuthPage() {
         await register({ email, password, name });
       }
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Something went wrong');
     }
   };
 
-  const isPending = isLoggingIn || isRegistering;
+  const inputClass = "w-full bg-secondary border border-border rounded-xl px-4 py-3 pl-11 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all";
 
   return (
-    <div className="min-h-screen bg-background flex flex-col justify-center relative overflow-hidden selection:bg-primary/30">
-      {/* decorative background elements */}
-      {/* marketing page abstract modern geometric dark theme */}
-      <img
-        src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop"
-        alt="Background"
-        className="absolute inset-0 w-full h-full object-cover opacity-[0.03] pointer-events-none mix-blend-luminosity"
-      />
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent/20 rounded-full blur-[120px] pointer-events-none" />
-
-      <div className="max-w-md w-full mx-auto relative z-10 px-4 sm:px-0">
-        <div className="text-center mb-10">
-          <div className="inline-flex w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary to-accent items-center justify-center text-primary-foreground shadow-2xl shadow-primary/30 mb-6">
-            <TrendingUp className="w-8 h-8" />
+    <div className="min-h-screen bg-background flex">
+      {/* Left panel — branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-[hsl(0,0%,7%)] border-r border-border flex-col justify-between p-12">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
+            <TrendingUp className="w-4 h-4 text-black" />
           </div>
-          <h1 className="text-4xl font-display font-bold tracking-tight text-foreground mb-2">StockLive Dashboard</h1>
-          <p className="text-muted-foreground text-lg">Next generation financial dashboard.</p>
+          <div>
+            <span className="font-display font-bold text-base text-foreground">StockLive</span>
+            <span className="block text-[10px] text-muted-foreground font-medium tracking-widest uppercase">Dashboard</span>
+          </div>
         </div>
 
-        <div className="glass-card rounded-3xl p-8 shadow-2xl">
-          <div className="flex p-1 bg-secondary rounded-xl mb-8">
-            <button
-              onClick={() => { setIsLogin(true); setError(''); }}
-              className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${isLogin ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Sign In
-            </button>
-            <button
-              onClick={() => { setIsLogin(false); setError(''); }}
-              className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${!isLogin ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              Create Account
-            </button>
+        <div className="space-y-8">
+          <div>
+            <h1 className="font-display font-bold text-4xl leading-tight text-foreground mb-4">
+              Trade smarter.<br />
+              <span className="text-primary">Grow faster.</span>
+            </h1>
+            <p className="text-muted-foreground text-base leading-relaxed max-w-sm">
+              Real-time market data, Indian & US stocks, live portfolio tracking — all in one place.
+            </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-4">
+            {[
+              { stat: '22+', label: 'Stocks tracked live' },
+              { stat: '₹10,000', label: 'Starting virtual balance' },
+              { stat: '0ms', label: 'Delay on price updates' },
+            ].map(({ stat, label }) => (
+              <div key={label} className="flex items-center gap-4">
+                <span className="font-display font-bold text-2xl text-primary w-28">{stat}</span>
+                <span className="text-sm text-muted-foreground">{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <p className="text-xs text-muted-foreground">© 2026 StockLive. For educational purposes only.</p>
+      </div>
+
+      {/* Right panel — form */}
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="w-full max-w-sm">
+          {/* Mobile logo */}
+          <div className="flex items-center gap-2 mb-8 lg:hidden">
+            <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
+              <TrendingUp className="w-3.5 h-3.5 text-black" />
+            </div>
+            <span className="font-display font-bold text-sm">StockLive</span>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="font-display font-bold text-2xl text-foreground mb-1">
+              {isLogin ? 'Welcome back' : 'Create account'}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {isLogin ? "Sign in to your account" : "Start trading with ₹10,000 virtual balance"}
+            </p>
+          </div>
+
+          {/* Toggle */}
+          <div className="flex p-1 bg-secondary rounded-xl mb-6">
+            <button
+              onClick={() => { setIsLogin(true); setError(''); }}
+              className={cn("flex-1 py-2 rounded-lg text-sm font-semibold transition-all", isLogin ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+            >Sign In</button>
+            <button
+              onClick={() => { setIsLogin(false); setError(''); }}
+              className={cn("flex-1 py-2 rounded-lg text-sm font-semibold transition-all", !isLogin ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+            >Sign Up</button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {!isLogin && (
+              <div className="relative">
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input type="text" placeholder="Full name" value={name} onChange={e => setName(e.target.value)} required className={inputClass} />
+              </div>
+            )}
+            <div className="relative">
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} required className={inputClass} />
+            </div>
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required className={inputClass} />
+            </div>
+
             {error && (
-              <div className="p-4 rounded-xl bg-destructive/10 text-destructive text-sm font-medium border border-destructive/20 animate-in fade-in">
+              <div className="bg-[hsl(var(--market-down-bg))] border border-[hsl(var(--market-down)/0.3)] text-[hsl(var(--market-down))] text-xs px-4 py-2.5 rounded-xl">
                 {error}
               </div>
             )}
 
-            {!isLogin && (
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground px-1">Full Name</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted-foreground">
-                    <User className="h-5 w-5" />
-                  </div>
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    className="w-full bg-background border-2 border-border/50 text-foreground rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
-                    placeholder="John Doe"
-                  />
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground px-1">Email Address</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted-foreground">
-                  <Mail className="h-5 w-5" />
-                </div>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  className="w-full bg-background border-2 border-border/50 text-foreground rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
-                  placeholder="you@example.com"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground px-1">Password</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted-foreground">
-                  <Lock className="h-5 w-5" />
-                </div>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="w-full bg-background border-2 border-border/50 text-foreground rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isPending}
-              className="w-full py-4 mt-4 rounded-xl font-bold text-lg bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 transition-all duration-300 flex justify-center items-center"
-            >
-              {isPending ? <Loader2 className="w-6 h-6 animate-spin" /> : (isLogin ? 'Sign In' : 'Create Account')}
+            <button type="submit" disabled={isLoading}
+              className="w-full btn-primary flex items-center justify-center gap-2 py-3 mt-2 disabled:opacity-50">
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                <>{isLogin ? 'Sign In' : 'Create Account'} <ArrowRight className="w-4 h-4" /></>
+              )}
             </button>
           </form>
+
+          <p className="text-xs text-muted-foreground text-center mt-6">
+            {isLogin ? "Don't have an account? " : "Already have an account? "}
+            <button onClick={() => { setIsLogin(!isLogin); setError(''); }} className="text-primary font-semibold hover:underline">
+              {isLogin ? 'Sign up free' : 'Sign in'}
+            </button>
+          </p>
         </div>
       </div>
     </div>

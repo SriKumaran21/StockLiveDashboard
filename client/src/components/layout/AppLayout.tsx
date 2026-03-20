@@ -5,8 +5,9 @@ import { AddFundsDialog } from '@/components/user/AddFundsDialog';
 import { cn, formatCurrency } from '@/lib/format';
 import {
   LayoutDashboard, Search, PieChart, TrendingUp,
-  LogOut, Menu, Bell, MessageCircle, ChevronRight,
+  LogOut, Menu, MessageCircle, ChevronRight,
 } from 'lucide-react';
+import { NotificationsPanel } from './NotificationsPanel';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -103,10 +104,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
-            <button className="relative p-2 rounded-lg text-muted-foreground hover:bg-secondary transition-colors">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-primary rounded-full" />
-            </button>
+            <NotificationsPanel />
 
             {user && (
               <div className="flex items-center gap-3 border-l border-border pl-3 sm:pl-4">

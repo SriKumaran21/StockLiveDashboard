@@ -2,9 +2,16 @@ import React from 'react';
 import { useIndices } from '@/hooks/use-stocks';
 import { useLiveMarket } from '@/hooks/use-live-market';
 import { cn } from '@/lib/format';
+import { useLocation } from 'wouter';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 
 export function MarketOverview() {
+  const [, navigate] = useLocation();
+  const indexToSymbol: Record<string, string> = {
+    'S&P 500': 'SPY',
+    'Nasdaq 100': 'QQQ',
+    'Dow Jones': 'DIA',
+  };
   const { data: initialIndices, isLoading } = useIndices();
   const { indices: liveIndices } = useLiveMarket();
 
@@ -29,9 +36,10 @@ export function MarketOverview() {
         const isPositive = index.change >= 0;
         return (
           <div key={index.name}
+            onClick={() => navigate(`/stock/${indexToSymbol[index.name] || index.name}`)}
             className={cn(
-              "relative rounded-2xl p-5 border overflow-hidden transition-all duration-300 animate-slide-up",
-              "bg-card border-border hover:border-primary/30"
+              "relative rounded-2xl p-5 border overflow-hidden transition-all duration-300 animate-slide-up cursor-pointer",
+              "bg-card border-border hover:border-primary/30 hover:bg-secondary/30"
             )}
             style={{ animationDelay: `${i * 80}ms` }}
           >

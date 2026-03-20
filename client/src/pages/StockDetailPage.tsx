@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'wouter';
 import { useStockHistory, useStockBySymbol } from '@/hooks/use-stocks';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@shared/routes';
 import { useLiveMarket } from '@/hooks/use-live-market';
 import { useBuyStock, useSellStock, useHoldings } from '@/hooks/use-trading';
 import { formatCurrency, formatNumber, cn } from '@/lib/format';
 import { LivePrice } from '@/components/ui/LivePrice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
 import {
-  ArrowLeft, TrendingUp, TrendingDown, Plus, Minus,
-  Clock, BarChart3, DollarSign, Loader2,
+  ArrowLeft, TrendingUp, TrendingDown, Plus, Minus, Loader2, ExternalLink, Newspaper,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
@@ -35,6 +35,19 @@ export default function StockDetailPage() {
   const { data: holdings } = useHoldings();
 
   const livePrice = prices[symbol?.toUpperCase() || ''];
+
+  const { data: news } = useQuery({
+    queryKey: ['news', symbol],
+    queryFn: async () => {
+      const url = new URL(api.news.bySymbol.path, window.location.origin);
+      url.searchParams.set('symbol', symbol || 'AAPL');
+      const res = await fetch(url.toString());
+      if (!res.ok) throw new Error('Failed to fetch news');
+      return res.json();
+    },
+    enabled: !!symbol,
+    staleTime: 300000,
+  });
   const currentPrice = livePrice?.price ?? stock?.price ?? 0;
   const holding = holdings?.find(h => h.symbol === symbol?.toUpperCase());
 
@@ -206,23 +219,51 @@ export default function StockDetailPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-border rounded-2xl overflow-hidden">
             {[
-              { icon: DollarSign, label: 'Current Price', value: <LivePrice symbol={stock.symbol} initialPrice={stock.price} initialChangePercent={stock.changePercent} showChange={false} className="text-lg font-bold" /> },
-              { icon: isPositive ? TrendingUp : TrendingDown, label: 'Day Change', value: <span className={isPositive ? 'text-green-500' : 'text-red-500'}>{isPositive ? '+' : ''}{formatCurrency(Math.abs(stock.change))}</span> },
-              { icon: BarChart3, label: 'Volume', value: formatNumber(stock.volume) },
-              { icon: Clock, label: 'Holdings', value: holding ? `${holding.quantity} shares` : '—' },
-            ].map(({ icon: Icon, label, value }) => (
-              <Card key={label}>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-                    <Icon className="w-3.5 h-3.5" />{label}
-                  </div>
-                  <div className="text-base font-bold font-mono">{value}</div>
-                </CardContent>
-              </Card>
+              { label: 'Current Price', value: <LivePrice symbol={stock.symbol} initialPrice={stock.price} initialChangePercent={stock.changePercent} showChange={false} className="text-lg font-bold font-mono" /> },
+              { label: 'Day Change', value: <span className={cn("text-lg font-bold font-mono", isPositive ? "text-[hsl(var(--market-up))]" : "text-[hsl(var(--market-down))]")}>{isPositive ? '+' : ''}{formatCurrency(Math.abs(stock.change))}</span> },
+              { label: 'Volume', value: <span className="text-lg font-bold font-mono">{formatNumber(stock.volume)}</span> },
+              { label: 'Holdings', value: <span className="text-lg font-bold font-mono">{holding ? `${holding.quantity} shares` : '—'}</span> },
+            ].map(({ label, value }) => (
+              <div key={label} className="bg-card px-5 py-4">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">{label}</p>
+                <div>{value}</div>
+              </div>
             ))}
           </div>
+        {/* News Feed */}
+          {news && news.length > 0 && (
+            <div className="bg-card border border-border rounded-2xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-border flex items-center gap-2">
+                <Newspaper className="w-4 h-4 text-muted-foreground" />
+                <h3 className="font-display font-bold text-sm">Latest News</h3>
+              </div>
+              <div className="divide-y divide-border">
+                {news.slice(0, 6).map((article: any, i: number) => (
+                  <a key={i} href={article.url} target="_blank" rel="noopener noreferrer"
+                    className="flex gap-4 p-4 hover:bg-secondary/40 transition-colors group">
+                    {article.image && (
+                      <img src={article.image} alt="" className="w-16 h-16 rounded-xl object-cover flex-shrink-0 bg-secondary" onError={e => (e.currentTarget.style.display='none')} />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+                        {article.headline}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <span className="text-[11px] font-medium text-muted-foreground">{article.source}</span>
+                        <span className="text-[11px] text-muted-foreground">·</span>
+                        <span className="text-[11px] text-muted-foreground">
+                          {new Date(article.datetime * 1000).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
+                        </span>
+                        <ExternalLink className="w-3 h-3 text-muted-foreground ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Trading Panel */}

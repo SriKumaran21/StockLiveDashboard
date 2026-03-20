@@ -4,6 +4,13 @@ import { useAuth } from '@/hooks/use-auth';
 import { usePortfolio, useHoldings } from '@/hooks/use-trading';
 import { useLiveMarket } from '@/hooks/use-live-market';
 import { formatCurrency, cn } from '@/lib/format';
+
+function compactNumber(n: number): string {
+  if (Math.abs(n) >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+  if (Math.abs(n) >= 1e7) return (n / 1e7).toFixed(2) + 'Cr';
+  if (Math.abs(n) >= 1e5) return (n / 1e5).toFixed(2) + 'L';
+  return formatCurrency(n);
+}
 import { WatchlistWidget } from '@/components/dashboard/WatchlistWidget';
 import { LivePrice } from '@/components/ui/LivePrice';
 import { TrendingUp, TrendingDown, ArrowRight, Wallet, BarChart2 } from 'lucide-react';
@@ -25,8 +32,8 @@ export function PortfolioPage() {
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
             <Wallet className="w-3.5 h-3.5" /> Available Balance
           </p>
-          <p className="text-3xl font-display font-bold font-mono tracking-tight text-foreground">
-            {formatCurrency(Number(user?.balance || 0))}
+          <p className="text-2xl font-display font-bold font-mono tracking-tight text-foreground truncate">
+            {compactNumber(Number(user?.balance || 0))}
           </p>
           <button onClick={() => {}} className="mt-4 text-xs font-semibold text-primary hover:underline">
             Add funds →
@@ -36,8 +43,8 @@ export function PortfolioPage() {
         {/* Invested */}
         <div className="bg-card border border-border rounded-2xl p-6">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Invested</p>
-          <p className="text-3xl font-display font-bold font-mono tracking-tight">
-            {formatCurrency(portfolio?.totalCost || 0)}
+          <p className="text-2xl font-display font-bold font-mono tracking-tight truncate">
+            {compactNumber(portfolio?.totalCost || 0)}
           </p>
           <p className="text-xs text-muted-foreground mt-1">{hasHoldings ? `${holdings.length} position${holdings.length > 1 ? 's' : ''}` : 'No positions'}</p>
         </div>
@@ -50,8 +57,8 @@ export function PortfolioPage() {
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
             <BarChart2 className="w-3.5 h-3.5" /> Total Returns
           </p>
-          <p className={cn("text-3xl font-display font-bold font-mono tracking-tight", returnsPositive ? "text-[hsl(var(--market-up))]" : "text-[hsl(var(--market-down))]")}>
-            {returnsPositive ? '+' : ''}{formatCurrency(Math.abs(portfolio?.totalReturns || 0))}
+          <p className={cn("text-2xl font-display font-bold font-mono tracking-tight truncate", returnsPositive ? "text-[hsl(var(--market-up))]" : "text-[hsl(var(--market-down))]")}>
+            {returnsPositive ? '+' : ''}{compactNumber(Math.abs(portfolio?.totalReturns || 0))}
           </p>
           <p className={cn("text-xs font-mono mt-1 font-semibold flex items-center gap-1", returnsPositive ? "text-[hsl(var(--market-up))]" : "text-[hsl(var(--market-down))]")}>
             {returnsPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
@@ -94,15 +101,15 @@ export function PortfolioPage() {
                         <div className="font-display font-bold text-foreground">{holding.symbol}</div>
                         <div className="text-xs text-muted-foreground">{holding.companyName}</div>
                       </td>
-                      <td className="px-6 py-4 text-right font-mono">{holding.quantity}</td>
-                      <td className="px-6 py-4 text-right font-mono">{formatCurrency(Number(holding.averagePrice))}</td>
+                      <td className="px-6 py-4 text-right font-mono text-sm">{Number(holding.quantity).toLocaleString('en-IN')}</td>
+                      <td className="px-6 py-4 text-right font-mono text-sm">{compactNumber(Number(holding.averagePrice))}</td>
                       <td className="px-6 py-4 text-right">
-                        <LivePrice symbol={holding.symbol} initialPrice={currentPrice} showChange={false} className="justify-end font-mono" />
+                        <LivePrice symbol={holding.symbol} initialPrice={currentPrice} showChange={false} className="justify-end font-mono text-sm" />
                       </td>
-                      <td className="px-6 py-4 text-right font-mono font-semibold">{formatCurrency(currentValue)}</td>
+                      <td className="px-6 py-4 text-right font-mono font-semibold text-sm">{compactNumber(currentValue)}</td>
                       <td className="px-6 py-4 text-right">
                         <span className={cn("font-mono font-bold text-sm", isPos ? "text-[hsl(var(--market-up))]" : "text-[hsl(var(--market-down))]")}>
-                          {isPos ? '+' : ''}{formatCurrency(returns)}
+                          {isPos ? '+' : ''}{compactNumber(returns)}
                         </span>
                         <div className={cn("text-xs font-mono", isPos ? "text-[hsl(var(--market-up))]" : "text-[hsl(var(--market-down))]")}>
                           {isPos ? '+' : ''}{returnsPercent.toFixed(2)}%
