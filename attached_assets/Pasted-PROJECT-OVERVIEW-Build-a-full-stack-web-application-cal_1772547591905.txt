@@ -1,0 +1,178 @@
+PROJECT OVERVIEW
+
+Build a full-stack web application called "StockLive Dashboard" - a real-time stock market monitoring platform for retail investors. The app should provide live market data, personalized watchlists, interactive charts, and IPO alerts in a clean, responsive interface.
+
+TECH STACK REQUIREMENTS
+
+Frontend: React.js with Tailwind CSS for styling
+Backend: Node.js with Express.js
+Database: PostgreSQL or MongoDB
+APIs: Integrate Alpha Vantage or Yahoo Finance for stock data
+Real-time: Implement WebSockets (Socket.io) for live price updates
+Charts: Use Chart.js or Recharts for interactive visualizations
+FUNCTIONAL REQUIREMENTS
+
+1. USER AUTHENTICATION & ACCOUNT
+
+Create signup/login functionality with JWT authentication
+Users should have a profile with:
+
+Name, Email, Avatar
+Virtual fund balance (starting with ₹10,000 demo money)
+Add Funds button (simulated transaction)
+2. DASHBOARD LAYOUT (Main Page)
+
+Create a responsive dashboard with the following components:
+
+A. Header Section
+
+App logo "StockLive"
+User profile dropdown with balance display
+Search bar to search any stock symbol/company
+B. Market Indices Cards
+
+Display Nifty 50 current value and change percentage
+Display BSE Sensex current value and change percentage
+Update in real-time
+C. IPO Alerts Section
+
+Horizontal scrollable cards showing:
+
+Company name
+IPO opening date
+IPO closing date
+Issue price range
+"Apply Now" button (dummy link)
+D. Interactive Price Chart
+
+Default chart showing Nifty 50 historical data (1 month)
+Allow time range selection: 1D, 1W, 1M, 3M, 1Y
+Hover tooltips showing exact values
+Zoom functionality
+E. Real-Time Stock Table
+
+Display columns:
+
+Symbol	Company Name	Price (₹)	Change (₹)	Change (%)	Volume	Action
+Data should update every 5-10 seconds
+Color coding: Green for positive change, Red for negative
+Volume in formatted numbers (M for millions, K for thousands)
+F. Filter Toggle Buttons
+
+Buttons: "Top Gainers" and "Top Losers"
+Clicking filters the table to show only those stocks
+3. PERSONAL WATCHLIST FEATURE
+
+Each user can maintain their own watchlist
+Add stocks to watchlist from the main table (click star/heart icon)
+Watchlist section displays:
+
+Symbol, Price, Change %
+Live price tracking
+Remove from watchlist option
+Store watchlist in database per user
+4. BACKEND API ENDPOINTS
+
+Build the following RESTful APIs:
+
+text
+POST   /api/auth/register     - User registration
+POST   /api/auth/login        - User login
+GET    /api/user/profile      - Get user details + balance
+PUT    /api/user/balance      - Add funds
+
+GET    /api/stocks/indices    - Get Nifty/Sensex live values
+GET    /api/stocks/all        - Get list of all stocks with prices
+GET    /api/stocks/gainers    - Get top gainers list
+GET    /api/stocks/losers     - Get top losers list
+GET    /api/stocks/search?q=  - Search stocks
+GET    /api/stocks/history?symbol=&range= - Historical chart data
+
+GET    /api/ipos              - Get current and upcoming IPOs
+
+GET    /api/watchlist/:userId - Get user's watchlist
+POST   /api/watchlist/add     - Add symbol to watchlist
+DELETE /api/watchlist/remove  - Remove from watchlist
+5. DATA INTEGRATION REQUIREMENTS
+
+Connect to Alpha Vantage API for:
+
+Real-time stock quotes
+Historical data for charts
+Top gainers/losers
+Mock IPO data if API doesn't provide (create static JSON)
+WebSocket connection for pushing price updates to:
+
+Main table
+Watchlist items
+Indices cards
+6. DATABASE SCHEMA
+
+Users Table:
+
+text
+id (UUID)
+email (string, unique)
+password (hashed)
+name (string)
+balance (number, default 10000)
+createdAt (timestamp)
+Watchlists Table:
+
+text
+id (UUID)
+userId (foreign key)
+symbol (string)
+companyName (string)
+addedAt (timestamp)
+Transactions Table (optional):
+
+text
+id (UUID)
+userId (foreign key)
+amount (number)
+type (credit/debit)
+timestamp
+7. UI/UX REQUIREMENTS
+
+Responsive Design: Mobile, Tablet, Desktop breakpoints
+Dark/Light Mode: Toggle switch in header
+Loading States: Show skeletons while fetching data
+Error Handling: Friendly error messages if API fails
+Refresh Indicator: Show last updated timestamp
+Tooltips: Hover explanations for new users
+SAMPLE MOCK DATA (For Development)
+
+Stocks List (Initial Mock)
+
+javascript
+[
+  { symbol: "RELIANCE", company: "Reliance Industries", price: 2456.75, change: 23.50, changePercent: 0.97, volume: 3200000 },
+  { symbol: "TCS", company: "Tata Consultancy Services", price: 3567.80, change: -12.30, changePercent: -0.34, volume: 1800000 },
+  { symbol: "HDFC", company: "HDFC Bank", price: 1678.90, change: 45.20, changePercent: 2.77, volume: 5600000 },
+  { symbol: "INFY", company: "Infosys", price: 1478.30, change: -8.75, changePercent: -0.59, volume: 4300000 },
+  { symbol: "ICICIBANK", company: "ICICI Bank", price: 987.65, change: 12.40, changePercent: 1.27, volume: 7200000 }
+]
+IPO Data (Mock)
+
+javascript
+[
+  { company: "Ola Electric", openDate: "2024-03-15", closeDate: "2024-03-19", priceRange: "₹72-₹76", minQty: 195 },
+  { company: "Firstcry", openDate: "2024-03-20", closeDate: "2024-03-22", priceRange: "₹440-₹465", minQty: 32 }
+]
+ACCEPTANCE CRITERIA
+
+The application is complete when:
+
+User can sign up and log in securely
+Dashboard loads with live Nifty/Sensex values
+Stock table shows real-time changing prices
+User can search for any stock
+Clicking "Top Gainers" filters correctly
+User can add/remove stocks to personal watchlist
+Watchlist persists after logout/login
+Charts display historical data with range selector
+IPO section shows upcoming IPOs with dates
+User balance displays and "Add Funds" updates it
+Mobile view collapses sidebar and stacks cards
+Dark mode toggle changes theme smoothly

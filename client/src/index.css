@@ -1,0 +1,226 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+    --font-sans: 'Inter', sans-serif;
+    --font-display: 'Plus Jakarta Sans', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --background: 220 10% 8%; /* Dark charcoal */
+    --foreground: 210 20% 98%; /* Off-white */
+    
+    --card: 220 10% 12%; /* Slightly lighter charcoal for cards */
+    --card-foreground: 210 20% 98%;
+    
+    --popover: 220 10% 12%;
+    --popover-foreground: 210 20% 98%;
+    
+    --primary: 150 80% 40%; /* Vibrant green */
+    --primary-foreground: 210 20% 98%;
+    
+    --secondary: 220 10% 20%; /* Darker grey for secondary elements */
+    --secondary-foreground: 210 20% 98%;
+    
+    --muted: 210 10% 60%; /* Light grey for muted text */
+    --muted-foreground: 210 10% 60%;
+    
+    --accent: 150 80% 40%; /* Vibrant green */
+    --accent-foreground: 210 20% 98%;
+    
+    --destructive: 0 84% 60%; /* Red for destructive actions */
+    --destructive-foreground: 210 20% 98%;
+    
+    --border: 220 10% 25%; /* Slightly lighter grey for borders */
+    --input: 220 10% 20%;
+    --ring: 150 80% 40%;
+
+    --radius: 0.75rem;
+
+    /* Financial specific colors */
+    --market-up: 150 80% 40%; /* Vibrant green */
+    --market-up-bg: 150 80% 40% / 0.1;
+    --market-down: 0 84% 60%; /* Red */
+    --market-down-bg: 0 84% 60% / 0.1;
+    
+    --profit: 150 80% 40%; /* Vibrant green */
+    --loss: 0 84% 60%; /* Red */
+    --neutral: 210 10% 60%; /* Light grey */
+  }
+
+  /* Force dark theme */
+  .dark{
+     --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+  }
+  body {
+    --background: 220 10% 8%; /* Dark charcoal */
+    --foreground: 210 20% 98%; /* Off-white */
+    
+    --card: 220 10% 12%; /* Slightly lighter charcoal for cards */
+    --card-foreground: 210 20% 98%;
+    
+    --popover: 220 10% 12%;
+    --popover-foreground: 210 20% 98%;
+    
+    --primary: 150 80% 40%; /* Vibrant green */
+    --primary-foreground: 210 20% 98%;
+    
+    --secondary: 220 10% 20%; /* Darker grey for secondary elements */
+    --secondary-foreground: 210 20% 98%;
+    
+    --muted: 210 10% 60%; /* Light grey for muted text */
+    --muted-foreground: 210 10% 60%;
+    
+    --accent: 150 80% 40%; /* Vibrant green */
+    --accent-foreground: 210 20% 98%;
+    
+    --destructive: 0 84% 60%; /* Red for destructive actions */
+    --destructive-foreground: 210 20% 98%;
+    
+    --border: 220 10% 25%; /* Slightly lighter grey for borders */
+    --input: 220 10% 20%;
+    --ring: 150 80% 40%;
+
+    --market-up: 150 80% 40%; /* Vibrant green */
+    --market-up-bg: 150 80% 40% / 0.1;
+    --market-down: 0 84% 60%; /* Red */
+    --market-down-bg: 0 84% 60% / 0.1;
+    
+    --profit: 150 80% 40%; /* Vibrant green */
+    --loss: 0 84% 60%; /* Red */
+    --neutral: 210 10% 60%; /* Light grey */
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary;
+    font-family: var(--font-sans);
+    letter-spacing: -0.01em;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    @apply tracking-tight;
+    letter-spacing: -0.01em;
+  }
+
+  .font-numbers {
+    font-family: 'JetBrains Mono', 'Roboto Mono', 'ui-monospace', 'SFMono-Regular', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
+    letter-spacing: 0;
+  }
+}
+
+@keyframes flash-green {
+  0% { background-color: transparent; }
+  50% { background-color: hsl(var(--market-up) / 0.2); }
+  100% { background-color: transparent; }
+}
+
+@keyframes flash-red {
+  0% { background-color: transparent; }
+  50% { background-color: hsl(var(--market-down) / 0.2); }
+  100% { background-color: transparent; }
+}
+
+.animate-flash-green {
+  animation: flash-green 1.5s ease-out;
+}
+
+.animate-flash-red {
+  animation: flash-red 1.5s ease-out;
+}
+
+/* Enhanced button styles */
+.btn-primary {
+  @apply bg-primary text-primaryForeground font-semibold py-2.5 px-6 rounded-xl transition-all duration-200;
+}
+
+.btn-secondary {
+  @apply bg-secondary text-secondaryForeground font-semibold py-2.5 px-6 rounded-xl transition-all duration-200;
+}
+
+.btn-profit {
+  @apply bg-profit text-white font-semibold py-2.5 px-6 rounded-xl transition-all duration-200;
+}
+
+.btn-danger {
+  @apply bg-loss text-white font-semibold py-2.5 px-6 rounded-xl transition-all duration-200;
+}
+
+/* Enhanced card styles */
+.card-fintech {
+  @apply bg-card border border-border rounded-xl p-5 transition-all duration-200;
+}
+
+/* Table row hover effects */
+.table-row-hover {
+  @apply transition-all duration-200 hover:bg-secondary/50 hover:scale-[1.01];
+}
+
+/* Navigation active indicator */
+.nav-active {
+  @apply bg-primary/10 text-primary border-l-2 border-primary;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--secondary));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary));
+}
+
+/* Hide scrollbar for horizontal scrolling but keep functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
