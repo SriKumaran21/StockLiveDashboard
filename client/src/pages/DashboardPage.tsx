@@ -4,6 +4,7 @@ import { InteractiveChart } from '@/components/dashboard/InteractiveChart';
 import { WatchlistWidget } from '@/components/dashboard/WatchlistWidget';
 import { StockListWidget } from '@/components/dashboard/StockListWidget';
 import { IPOCarousel } from '@/components/dashboard/IPOCarousel';
+import { MarketHeatmap } from '@/components/dashboard/MarketHeatmap';
 
 export function DashboardPage() {
   return (
@@ -25,6 +26,8 @@ export function DashboardPage() {
           <IPOCarousel />
         </div>
       </div>
+
+      <MarketHeatmap />
     </div>
   );
 }

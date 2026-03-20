@@ -68,6 +68,7 @@ function Router() {
       </Route>
 
 
+
       <Route path="/stock/:symbol">
         {() => <ProtectedRoute component={StockDetailPage} />}
       </Route>

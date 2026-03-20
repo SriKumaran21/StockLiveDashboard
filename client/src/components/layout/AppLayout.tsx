@@ -9,6 +9,7 @@ import {
   Sun, Moon,
 } from 'lucide-react';
 import { NotificationsPanel } from './NotificationsPanel';
+import { MarketHours } from '@/components/ui/MarketHours';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -17,6 +18,20 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [isAddFundsOpen, setIsAddFundsOpen] = useState(false);
 
   const [dark, setDark] = React.useState(true);
+
+  React.useEffect(() => {
+    document.documentElement.style.setProperty('--background', dark ? '0 0% 6%' : '0 0% 97%');
+    document.documentElement.style.setProperty('--foreground', dark ? '0 0% 97%' : '0 0% 6%');
+    document.documentElement.style.setProperty('--card', dark ? '0 0% 9%' : '0 0% 100%');
+    document.documentElement.style.setProperty('--card-foreground', dark ? '0 0% 97%' : '0 0% 6%');
+    document.documentElement.style.setProperty('--secondary', dark ? '0 0% 13%' : '0 0% 92%');
+    document.documentElement.style.setProperty('--secondary-foreground', dark ? '0 0% 97%' : '0 0% 6%');
+    document.documentElement.style.setProperty('--border', dark ? '0 0% 14%' : '0 0% 85%');
+    document.documentElement.style.setProperty('--muted-foreground', dark ? '0 0% 50%' : '0 0% 40%');
+    document.documentElement.style.setProperty('--muted', dark ? '0 0% 40%' : '0 0% 40%');
+    document.body.style.backgroundColor = dark ? 'hsl(0 0% 6%)' : 'hsl(0 0% 97%)';
+    document.body.style.color = dark ? 'hsl(0 0% 97%)' : 'hsl(0 0% 6%)';
+  }, [dark]);
   const navItems = [
     { label: 'Dashboard',   path: '/',            icon: LayoutDashboard },
     { label: 'Explore',     path: '/explore',     icon: Search },
@@ -106,6 +121,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
+            <div className="hidden md:block"><MarketHours /></div>
             <button
               onClick={() => setDark(!dark)}
               className="p-2 rounded-lg text-muted-foreground hover:bg-secondary transition-colors"
