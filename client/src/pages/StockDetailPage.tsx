@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'wouter';
-import { useStockHistory, useAllStocks } from '@/hooks/use-stocks';
+import { useStockHistory, useStockBySymbol } from '@/hooks/use-stocks';
 import { useLiveMarket } from '@/hooks/use-live-market';
 import { useBuyStock, useSellStock, useHoldings } from '@/hooks/use-trading';
 import { formatCurrency, formatNumber, cn } from '@/lib/format';
@@ -27,14 +27,13 @@ export default function StockDetailPage() {
   const [orderType, setOrderType] = useState<'buy' | 'sell'>('buy');
   const [range, setRange] = useState<Range>('1M');
 
-  const { data: allStocks } = useAllStocks();
+  const { data: stock, isLoading: stockLoading } = useStockBySymbol(symbol || '');
   const { data: history, isLoading: historyLoading } = useStockHistory(symbol || '', range);
   const { prices } = useLiveMarket();
   const buyMutation = useBuyStock();
   const sellMutation = useSellStock();
   const { data: holdings } = useHoldings();
 
-  const stock = allStocks?.find(s => s.symbol === symbol?.toUpperCase());
   const livePrice = prices[symbol?.toUpperCase() || ''];
   const currentPrice = livePrice?.price ?? stock?.price ?? 0;
   const holding = holdings?.find(h => h.symbol === symbol?.toUpperCase());
@@ -65,12 +64,19 @@ export default function StockDetailPage() {
     else sellMutation.mutate(tradeData);
   };
 
+  if (stockLoading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   if (!stock) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center space-y-4">
-          <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
-          <p className="text-muted-foreground">Loading stock data…</p>
+          <p className="text-muted-foreground">Stock not found</p>
           <Link href="/explore">
             <Button variant="outline" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" /> Back to Explore
@@ -81,10 +87,8 @@ export default function StockDetailPage() {
     );
   }
 
-  const priceChange = livePrice?.price
-    ? livePrice.price - (stock?.price ?? 0)
-    : stock?.change ?? 0;
-  const changePct = livePrice?.changePercent ?? stock?.changePercent ?? 0;
+  const changePct = livePrice?.changePercent ?? stock.changePercent ?? 0;
+  const priceChange = stock.change ?? 0;
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-500">
@@ -119,8 +123,7 @@ export default function StockDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Chart */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="card-fintech min-h-[420px] flex flex-col">
-            {/* Range Selector */}
+          <div className="card-fintech flex flex-col">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold">Price History</h2>
               <div className="flex bg-secondary/80 p-1 rounded-xl shadow-sm">
@@ -141,11 +144,15 @@ export default function StockDetailPage() {
               </div>
             </div>
 
-            {/* Chart Area */}
-            <div className="flex-1 w-full relative min-h-[300px]">
+            <div className="w-full relative" style={{ height: '320px' }}>
               {historyLoading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-card/80 backdrop-blur-sm z-10 rounded-xl">
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              )}
+              {!historyLoading && chartData.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+                  No historical data available for this range
                 </div>
               )}
               <ResponsiveContainer width="100%" height="100%">
@@ -163,19 +170,16 @@ export default function StockDetailPage() {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.4} />
                   <XAxis
                     dataKey="formattedTime"
-                    axisLine={false}
-                    tickLine={false}
+                    axisLine={false} tickLine={false}
                     tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-                    dy={10}
-                    minTickGap={40}
+                    dy={10} minTickGap={40}
                   />
                   <YAxis
                     domain={['auto', 'auto']}
-                    axisLine={false}
-                    tickLine={false}
+                    axisLine={false} tickLine={false}
                     tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
                     dx={-10}
-                    tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v.toFixed(0)}
+                    tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(1)}k` : v.toFixed(0)}
                   />
                   <Tooltip
                     contentStyle={{
@@ -190,10 +194,8 @@ export default function StockDetailPage() {
                     labelStyle={{ color: 'hsl(var(--muted-foreground))', marginBottom: '4px' }}
                   />
                   <Area
-                    type="monotone"
-                    dataKey="price"
-                    stroke={strokeColor}
-                    strokeWidth={2.5}
+                    type="monotone" dataKey="price"
+                    stroke={strokeColor} strokeWidth={2.5}
                     fill={`url(#${fillId})`}
                     activeDot={{ r: 5, strokeWidth: 0, fill: strokeColor }}
                     animationDuration={800}
@@ -203,19 +205,18 @@ export default function StockDetailPage() {
             </div>
           </div>
 
-          {/* Stats Row */}
+          {/* Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
               { icon: DollarSign, label: 'Current Price', value: <LivePrice symbol={stock.symbol} initialPrice={stock.price} initialChangePercent={stock.changePercent} showChange={false} className="text-lg font-bold" /> },
               { icon: isPositive ? TrendingUp : TrendingDown, label: 'Day Change', value: <span className={isPositive ? 'text-green-500' : 'text-red-500'}>{isPositive ? '+' : ''}{formatCurrency(Math.abs(stock.change))}</span> },
               { icon: BarChart3, label: 'Volume', value: formatNumber(stock.volume) },
-              { icon: Clock, label: 'Your Holdings', value: holding ? `${holding.quantity} shares` : '—' },
+              { icon: Clock, label: 'Holdings', value: holding ? `${holding.quantity} shares` : '—' },
             ].map(({ icon: Icon, label, value }) => (
               <Card key={label}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
-                    <Icon className="w-3.5 h-3.5" />
-                    {label}
+                    <Icon className="w-3.5 h-3.5" />{label}
                   </div>
                   <div className="text-base font-bold font-mono">{value}</div>
                 </CardContent>
@@ -228,50 +229,35 @@ export default function StockDetailPage() {
         <div className="lg:col-span-1">
           <div className="card-fintech sticky top-8 space-y-5">
             <h3 className="text-lg font-bold">Trade {stock.symbol}</h3>
-
-            {/* Buy / Sell Toggle */}
             <div className="flex p-1 bg-secondary rounded-xl">
               <button
                 onClick={() => setOrderType('buy')}
-                className={cn(
-                  "flex-1 py-2.5 rounded-lg text-sm font-bold transition-all",
-                  orderType === 'buy' ? "bg-green-600 text-white shadow-md" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Buy
-              </button>
+                className={cn("flex-1 py-2.5 rounded-lg text-sm font-bold transition-all",
+                  orderType === 'buy' ? "bg-green-600 text-white shadow-md" : "text-muted-foreground hover:text-foreground")}
+              >Buy</button>
               <button
                 onClick={() => setOrderType('sell')}
                 disabled={!holding || Number(holding.quantity) === 0}
-                className={cn(
-                  "flex-1 py-2.5 rounded-lg text-sm font-bold transition-all",
-                  orderType === 'sell' ? "bg-red-600 text-white shadow-md" : "text-muted-foreground hover:text-foreground disabled:opacity-40"
-                )}
-              >
-                Sell
-              </button>
+                className={cn("flex-1 py-2.5 rounded-lg text-sm font-bold transition-all",
+                  orderType === 'sell' ? "bg-red-600 text-white shadow-md" : "text-muted-foreground hover:text-foreground disabled:opacity-40")}
+              >Sell</button>
             </div>
 
-            {/* Quantity */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-muted-foreground">Quantity</label>
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={quantity <= 1}>
                   <Minus className="w-4 h-4" />
                 </Button>
-                <Input
-                  type="number" min="1"
-                  value={quantity}
+                <Input type="number" min="1" value={quantity}
                   onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="text-center font-mono font-bold"
-                />
+                  className="text-center font-mono font-bold" />
                 <Button variant="outline" size="sm" onClick={() => setQuantity(quantity + 1)}>
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
             </div>
 
-            {/* Order Summary */}
             <div className="bg-muted/40 rounded-xl p-4 space-y-2.5">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Price per share</span>
@@ -287,7 +273,6 @@ export default function StockDetailPage() {
               </div>
             </div>
 
-            {/* Submit */}
             <button
               onClick={handleTrade}
               disabled={buyMutation.isPending || sellMutation.isPending}
@@ -296,8 +281,7 @@ export default function StockDetailPage() {
                 orderType === 'buy' ? "bg-green-600 hover:bg-green-500" : "bg-red-600 hover:bg-red-500"
               )}
             >
-              {buyMutation.isPending || sellMutation.isPending
-                ? 'Processing…'
+              {buyMutation.isPending || sellMutation.isPending ? 'Processing…'
                 : `${orderType === 'buy' ? 'Buy' : 'Sell'} ${quantity} share${quantity > 1 ? 's' : ''} · ${formatCurrency(currentPrice * quantity)}`}
             </button>
 

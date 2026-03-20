@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { api, buildUrl } from "@shared/routes";
+import { api } from "@shared/routes";
 
 export function useIndices() {
   return useQuery({
@@ -9,6 +9,7 @@ export function useIndices() {
       if (!res.ok) throw new Error("Failed to fetch indices");
       return api.stocks.indices.responses[200].parse(await res.json());
     },
+    refetchInterval: 30000,
   });
 }
 
@@ -20,13 +21,13 @@ export function useAllStocks() {
       if (!res.ok) throw new Error("Failed to fetch stocks");
       return api.stocks.all.responses[200].parse(await res.json());
     },
+    refetchInterval: 30000,
   });
 }
 
 export function useGainersLosers(type: 'gainers' | 'losers') {
   const path = type === 'gainers' ? api.stocks.gainers.path : api.stocks.losers.path;
   const schema = type === 'gainers' ? api.stocks.gainers.responses[200] : api.stocks.losers.responses[200];
-  
   return useQuery({
     queryKey: [path],
     queryFn: async () => {
@@ -34,6 +35,7 @@ export function useGainersLosers(type: 'gainers' | 'losers') {
       if (!res.ok) throw new Error(`Failed to fetch ${type}`);
       return schema.parse(await res.json());
     },
+    refetchInterval: 30000,
   });
 }
 
@@ -47,7 +49,23 @@ export function useSearchStocks(query: string) {
       if (!res.ok) throw new Error("Search failed");
       return api.stocks.search.responses[200].parse(await res.json());
     },
-    enabled: !!query && query.length >= 2,
+    enabled: query.length >= 2,
+  });
+}
+
+export function useStockBySymbol(symbol: string) {
+  return useQuery({
+    queryKey: ['stock-by-symbol', symbol],
+    queryFn: async () => {
+      const url = new URL(api.stocks.search.path, window.location.origin);
+      url.searchParams.set('q', symbol);
+      const res = await fetch(url.toString());
+      if (!res.ok) throw new Error("Failed to fetch stock");
+      const results = api.stocks.search.responses[200].parse(await res.json());
+      return results.find((s: any) => s.symbol === symbol.toUpperCase()) ?? null;
+    },
+    enabled: !!symbol,
+    staleTime: 30000,
   });
 }
 
@@ -62,6 +80,7 @@ export function useStockHistory(symbol: string, range: string) {
       if (!res.ok) throw new Error("Failed to fetch history");
       return api.stocks.history.responses[200].parse(await res.json());
     },
-    enabled: !!symbol,
+    enabled: !!symbol && symbol.length > 0,
+    staleTime: 60000,
   });
 }
