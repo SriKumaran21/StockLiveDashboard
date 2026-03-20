@@ -6,6 +6,7 @@ import { Search, Star, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/format';
 import { useLocation } from 'wouter';
+import { StockIcon } from '@/components/ui/StockIcon';
 
 export function ExplorePage() {
   const [query, setQuery] = useState('');
@@ -82,9 +83,12 @@ export function ExplorePage() {
                   onClick={() => navigate(`/stock/${stock.symbol}`)}
                 >
                   <td className="px-6 py-4">
-                    <span className="font-display font-bold text-foreground group-hover:text-primary transition-colors">
-                      {stock.symbol}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <StockIcon symbol={stock.symbol} size={28} />
+                      <span className="font-display font-bold text-foreground group-hover:text-primary transition-colors">
+                        {stock.symbol}
+                      </span>
+                    </div>
                   </td>
                   <td className="px-6 py-4 hidden sm:table-cell text-muted-foreground text-xs">{stock.company}</td>
                   <td className="px-6 py-4 text-right">

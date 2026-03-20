@@ -24,7 +24,11 @@ export const transactions = pgTable("transactions", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id),
   amount: numeric("amount").notNull(),
-  type: text("type").notNull(), // 'credit' or 'debit'
+  type: text("type").notNull(), // 'credit' | 'debit' | 'buy' | 'sell'
+  symbol: text("symbol"),
+  companyName: text("company_name"),
+  quantity: numeric("quantity"),
+  price: numeric("price"),
   timestamp: timestamp("timestamp").defaultNow(),
 });
 
@@ -83,7 +87,25 @@ export const insertHoldingSchema = createInsertSchema(holdings).omit({ id: true,
 export type InsertHolding = z.infer<typeof insertHoldingSchema>;
 export type Holding = typeof holdings.$inferSelect;
 
-// ── Community Chat ───────────────────────────────────────
+// ── Price Alerts ────────────────────────────────────────────
+export const priceAlerts = pgTable("price_alerts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  symbol: text("symbol").notNull(),
+  targetPrice: numeric("target_price").notNull(),
+  condition: text("condition").notNull(), // 'above' | 'below'
+  triggered: text("triggered").notNull().default('false'),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const priceAlertsRelations = relations(priceAlerts, ({ one }) => ({
+  user: one(users, { fields: [priceAlerts.userId], references: [users.id] }),
+}));
+
+export type PriceAlert = typeof priceAlerts.$inferSelect;
+export type InsertPriceAlert = typeof priceAlerts.$inferInsert;
+
+// ── Community Chat ───────────────────────────────────────────
 export const chatMessages = pgTable("chat_messages", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id),

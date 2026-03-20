@@ -2,6 +2,8 @@ import type { Express } from "express";
 import type { Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
+import { db } from "./db";
+import { users, holdings, transactions, priceAlerts } from "@shared/schema";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import session from "express-session";
@@ -224,20 +226,21 @@ export async function registerRoutes(
 
   app.get(api.stocks.search.path, async (req, res) => {
     const q = (req.query.q as string)?.toLowerCase();
+
+    // Combined list of all searchable stocks including indices
+    const ALL_SEARCHABLE = [
+      ...DEFAULT_STOCKS,
+      { symbol: "SPY", company: "S&P 500 ETF" },
+      { symbol: "QQQ", company: "Nasdaq 100 ETF" },
+      { symbol: "DIA", company: "Dow Jones ETF" },
+    ];
+
     if (!q) {
-      // return all default stocks with live prices
       try {
         const results = await Promise.all(
           DEFAULT_STOCKS.map(async ({ symbol, company }) => {
             const quote = await getQuote(symbol);
-            return {
-              symbol,
-              company,
-              price: quote.price,
-              change: quote.change,
-              changePercent: quote.changePercent,
-              volume: 0,
-            };
+            return { symbol, company, price: quote.price, change: quote.change, changePercent: quote.changePercent, volume: 0 };
           })
         );
         return res.json(results);
@@ -245,8 +248,8 @@ export async function registerRoutes(
         return res.status(500).json({ message: "Failed to fetch stocks" });
       }
     }
-    // filter from default list by symbol or company name
-    const matched = DEFAULT_STOCKS.filter(
+    // filter from combined list by symbol or company name
+    const matched = ALL_SEARCHABLE.filter(
       s =>
         s.symbol.toLowerCase().includes(q) ||
         s.company.toLowerCase().includes(q)

@@ -4,6 +4,7 @@ import { LivePrice } from '@/components/ui/LivePrice';
 import { cn } from '@/lib/format';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { useLocation } from 'wouter';
+import { StockIcon } from '@/components/ui/StockIcon';
 
 export function StockListWidget() {
   const [tab, setTab] = useState<'gainers' | 'losers'>('gainers');
@@ -81,11 +82,16 @@ export function StockListWidget() {
                 onClick={() => navigate(`/stock/${stock.symbol}`)}
               >
                 <td className="px-6 py-4">
-                  <div className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                    {stock.symbol}
-                  </div>
-                  <div className="text-xs text-muted-foreground truncate max-w-[150px]">
-                    {stock.company}
+                  <div className="flex items-center gap-3">
+                    <StockIcon symbol={stock.symbol} size={28} />
+                    <div>
+                      <div className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                        {stock.symbol}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate max-w-[120px]">
+                        {stock.company}
+                      </div>
+                    </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-right">

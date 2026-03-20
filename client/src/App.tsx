@@ -67,6 +67,7 @@ function Router() {
         {() => <ProtectedRoute component={CommunityPage} />}
       </Route>
 
+
       <Route path="/stock/:symbol">
         {() => <ProtectedRoute component={StockDetailPage} />}
       </Route>

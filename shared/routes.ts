@@ -262,7 +262,39 @@ export const api = {
         401: errorSchemas.unauthorized,
       }
     }
-  }
+  },
+  orders: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/orders' as const,
+      responses: { 200: z.array(z.any()) }
+    }
+  },
+  alerts: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/alerts' as const,
+      responses: { 200: z.array(z.any()) }
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/alerts' as const,
+      input: z.object({ symbol: z.string(), targetPrice: z.number(), condition: z.enum(['above','below']) }),
+      responses: { 201: z.any() }
+    },
+    remove: {
+      method: 'DELETE' as const,
+      path: '/api/alerts/:id' as const,
+      responses: { 200: z.object({ success: z.boolean() }) }
+    }
+  },
+  leaderboard: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/leaderboard' as const,
+      responses: { 200: z.array(z.any()) }
+    }
+  },
 };
 
 export function buildUrl(path: string, params?: Record<string, string | number>): string {

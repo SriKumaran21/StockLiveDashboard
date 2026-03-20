@@ -133,7 +133,7 @@ export default function StockDetailPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Chart */}
         <div className="lg:col-span-2 space-y-4">
           <div className="card-fintech flex flex-col">
@@ -268,7 +268,7 @@ export default function StockDetailPage() {
 
         {/* Trading Panel */}
         <div className="lg:col-span-1">
-          <div className="card-fintech sticky top-8 space-y-5">
+          <div className="card-fintech sticky top-24 space-y-5">
             <h3 className="text-lg font-bold">Trade {stock.symbol}</h3>
             <div className="flex p-1 bg-secondary rounded-xl">
               <button

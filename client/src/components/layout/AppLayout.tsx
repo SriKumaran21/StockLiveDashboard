@@ -6,6 +6,7 @@ import { cn, formatCurrency } from '@/lib/format';
 import {
   LayoutDashboard, Search, PieChart, TrendingUp,
   LogOut, Menu, MessageCircle, ChevronRight,
+  Sun, Moon,
 } from 'lucide-react';
 import { NotificationsPanel } from './NotificationsPanel';
 
@@ -15,11 +16,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAddFundsOpen, setIsAddFundsOpen] = useState(false);
 
+  const [dark, setDark] = React.useState(true);
   const navItems = [
-    { label: 'Dashboard',  path: '/',          icon: LayoutDashboard },
-    { label: 'Explore',    path: '/explore',    icon: Search },
-    { label: 'Portfolio',  path: '/portfolio',  icon: PieChart },
-    { label: 'Community',  path: '/community',  icon: MessageCircle },
+    { label: 'Dashboard',   path: '/',            icon: LayoutDashboard },
+    { label: 'Explore',     path: '/explore',     icon: Search },
+    { label: 'Portfolio',   path: '/portfolio',   icon: PieChart },
+    { label: 'Community',   path: '/community',   icon: MessageCircle },
   ];
 
   return (
@@ -104,6 +106,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
+            <button
+              onClick={() => setDark(!dark)}
+              className="p-2 rounded-lg text-muted-foreground hover:bg-secondary transition-colors"
+            >
+              {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
             <NotificationsPanel />
 
             {user && (
