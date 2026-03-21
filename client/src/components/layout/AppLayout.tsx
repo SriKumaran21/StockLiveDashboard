@@ -5,6 +5,7 @@ import { AddFundsDialog } from '@/components/user/AddFundsDialog';
 import { MarketHours } from '@/components/ui/MarketHours';
 import { NotificationsPanel } from './NotificationsPanel';
 import { NewsTicker } from '@/components/ui/NewsTicker';
+import { AIAssistant } from '@/components/ui/AIAssistant';
 import { formatCurrency, cn } from '@/lib/format';
 import {
   LayoutDashboard, Search, PieChart, MessageCircle,
@@ -42,7 +43,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <Link key={path} href={path}
             onClick={() => setMobileOpen(false)}
             className={cn('nav-item group', isActive && 'active')}
-            style={{ justifyContent: show ? 'flex-start' : 'center' }}>
+            style={{ justifyContent: show ? 'flex-start' : 'center', paddingLeft: show ? 12 : 0, paddingRight: show ? 12 : 0 }}>
             <Icon className="flex-shrink-0" style={{ width: 17, height: 17 }} />
             <span style={{
               opacity: show ? 1 : 0,
@@ -115,7 +116,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         className="hidden lg:flex flex-col bg-card"
         style={{
           position: 'fixed', top: 0, left: 0, height: '100vh', zIndex: 50,
-          width: expanded ? 224 : 56,
+          width: expanded ? 224 : 64,
           transition: 'width 250ms ease-in-out',
           borderRight: '1px solid hsl(var(--))',
           overflow: 'hidden',
@@ -170,7 +171,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0 lg:ml-14">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-16">
         {/* Top bar */}
         <header className="flex items-center justify-between sticky top-0 z-30 flex-shrink-0 bg-card/95 backdrop-blur-sm"
           style={{ height: 56, padding: '0 16px', borderBottom: '1px solid hsl(var(--))' }}>
@@ -217,6 +218,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       <AddFundsDialog isOpen={addFundsOpen} onClose={() => setAddFundsOpen(false)} currentBalance={user?.balance || 0} />
+      <AIAssistant />
     </div>
   );
 }

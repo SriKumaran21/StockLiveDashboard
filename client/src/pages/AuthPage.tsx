@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { TrendingUp, Mail, Lock, User, Loader2, ArrowRight, BarChart2, Shield, Zap } from 'lucide-react';
+import { TrendingUp, Mail, Lock, User, Loader2, ArrowRight, BarChart2, Shield, Zap, MessageCircle, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/format';
 
 const TICKER = [
@@ -70,25 +70,26 @@ export function AuthPage() {
             Real-time NSE, BSE & US market data. Practice trading with virtual funds — zero risk, full experience.
           </p>
 
-          {/* App stats */}
+          {/* Feature Cards (Community Chat, Portfolio Analysis, AI Assistant) */}
           <div className="grid grid-cols-3 gap-3 mb-8">
             {[
-              { value: '35+', label: 'Stocks tracked' },
-              { value: '4', label: 'Index markets' },
-              { value: '100%', label: 'Free to use' },
-            ].map(({ value, label }) => (
+              { icon: MessageCircle, label: 'Community Chat' },
+              { icon: BarChart2, label: 'Portfolio Analysis' },
+              { icon: Sparkles, label: 'AI Assistant' },
+            ].map(({ icon: Icon, label }) => (
               <div key={label} className="bg-[hsl(0,0%,10%)] rounded-xl p-3 text-center">
-                <p className="font-display font-bold text-xl text-primary">{value}</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">{label}</p>
+                <div className="flex items-center justify-center mb-2">
+                  <Icon className="w-5 h-5 text-primary" />
+                </div>
+                <p className="text-[11px] text-muted-foreground">{label}</p>
               </div>
             ))}
           </div>
 
-          {/* Feature list */}
+          {/* Feature list - REMOVED "Professional candlestick charts" */}
           <div className="space-y-2.5 mb-8">
             {[
               { icon: Zap,       text: 'Live NSE/BSE & US stock prices' },
-              { icon: BarChart2, text: 'Professional candlestick charts' },
               { icon: Shield,    text: 'Paper trading — no real money' },
             ].map(({ icon: Icon, text }) => (
               <div key={text} className="flex items-center gap-3">
