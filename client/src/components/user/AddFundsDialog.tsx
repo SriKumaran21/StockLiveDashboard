@@ -91,9 +91,9 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={handleClose} />
-      <div className="relative bg-card border border-border rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+      <div className="relative bg-card  rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+        <div className="flex items-center justify-between px-6 py-4 border-b ">
           <div>
             <h2 className="font-display font-bold text-base">Add Funds</h2>
             <p className="text-xs text-muted-foreground">
@@ -115,7 +115,7 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
                   step === s ? "bg-primary text-black" :
                   ['amount','method','details'].indexOf(step) > i ? "bg-green-500 text-black" : "bg-secondary text-muted-foreground"
                 )}>{i + 1}</div>
-                <div className={cn("h-px flex-1", i < 2 ? "bg-border" : "hidden")} />
+                <div className={cn("h-px flex-1", i < 2 ? "bg-" : "hidden")} />
               </div>
             ))}
           </div>
@@ -134,7 +134,7 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
                     placeholder="0"
                     value={amount}
                     onChange={e => setAmount(e.target.value)}
-                    className="w-full bg-secondary border border-border rounded-xl pl-9 pr-4 py-3.5 text-xl font-bold font-mono focus:outline-none focus:border-primary transition-colors"
+                    className="w-full bg-secondary  rounded-xl pl-9 pr-4 py-3.5 text-xl font-bold font-mono focus:outline-none focus:border-primary transition-colors"
                     min="100"
                   />
                 </div>
@@ -149,10 +149,10 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
                   {QUICK_AMOUNTS.map(a => (
                     <button key={a} onClick={() => setAmount(a.toString())}
                       className={cn(
-                        "py-2.5 rounded-xl text-sm font-semibold border transition-all",
+                        "py-2.5 rounded-xl text-sm font-semibold  transition-all",
                         amount === a.toString()
                           ? "bg-primary text-black border-primary"
-                          : "bg-secondary border-border hover:border-primary/50 text-foreground"
+                          : "bg-secondary  hover:border-primary/50 text-foreground"
                       )}>
                       {a >= 100000 ? `₹${a/100000}L` : a >= 1000 ? `₹${a/1000}K` : `₹${a}`}
                     </button>
@@ -182,8 +182,8 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
               ].map(({ id, icon: Icon, label, desc }) => (
                 <button key={id} onClick={() => setMethod(id)}
                   className={cn(
-                    "w-full flex items-center gap-4 p-4 rounded-xl border transition-all text-left",
-                    method === id ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                    "w-full flex items-center gap-4 p-4 rounded-xl  transition-all text-left",
+                    method === id ? "border-primary bg-primary/5" : " hover:border-primary/40"
                   )}>
                   <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
                     method === id ? "bg-primary/10 text-primary" : "bg-secondary text-muted-foreground")}>
@@ -194,7 +194,7 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
                     <p className="text-xs text-muted-foreground">{desc}</p>
                   </div>
                   <div className={cn("w-4 h-4 rounded-full border-2 flex-shrink-0",
-                    method === id ? "border-primary bg-primary" : "border-border")}>
+                    method === id ? "border-primary bg-primary" : "")}>
                     {method === id && <div className="w-full h-full rounded-full bg-black scale-50" />}
                   </div>
                 </button>
@@ -223,13 +223,13 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
                       placeholder="yourname@upi"
                       value={upiId}
                       onChange={e => setUpiId(e.target.value)}
-                      className="w-full bg-secondary border border-border rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors"
+                      className="w-full bg-secondary  rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors"
                     />
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     {['@okaxis', '@okicici', '@ybl', '@paytm', '@upi'].map(suffix => (
                       <button key={suffix} onClick={() => setUpiId(prev => prev.split('@')[0] + suffix)}
-                        className="text-xs px-3 py-1.5 bg-secondary rounded-lg hover:bg-border transition-colors">
+                        className="text-xs px-3 py-1.5 bg-secondary rounded-lg hover:bg- transition-colors">
                         {suffix}
                       </button>
                     ))}
@@ -242,8 +242,8 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
                   {BANKS.map(bank => (
                     <button key={bank.id} onClick={() => setSelectedBank(bank.id)}
                       className={cn(
-                        "p-3 rounded-xl border text-left transition-all",
-                        selectedBank === bank.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                        "p-3 rounded-xl  text-left transition-all",
+                        selectedBank === bank.id ? "border-primary bg-primary/5" : " hover:border-primary/40"
                       )}>
                       <div className="text-lg mb-1">{bank.logo}</div>
                       <p className="text-xs font-semibold">{bank.name}</p>
@@ -261,7 +261,7 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
                       placeholder="0000 0000 0000 0000"
                       value={cardNumber}
                       onChange={e => setCardNumber(formatCard(e.target.value))}
-                      className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-primary transition-colors mt-1.5"
+                      className="w-full bg-secondary  rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-primary transition-colors mt-1.5"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -272,7 +272,7 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
                         placeholder="MM/YY"
                         value={cardExpiry}
                         onChange={e => setCardExpiry(formatExpiry(e.target.value))}
-                        className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-primary transition-colors mt-1.5"
+                        className="w-full bg-secondary  rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-primary transition-colors mt-1.5"
                       />
                     </div>
                     <div>
@@ -282,7 +282,7 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
                         placeholder="•••"
                         value={cardCvv}
                         onChange={e => setCardCvv(e.target.value.slice(0, 3))}
-                        className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-primary transition-colors mt-1.5"
+                        className="w-full bg-secondary  rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-primary transition-colors mt-1.5"
                       />
                     </div>
                   </div>
@@ -293,7 +293,7 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
                       placeholder="JOHN DOE"
                       value={cardName}
                       onChange={e => setCardName(e.target.value.toUpperCase())}
-                      className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm font-mono uppercase focus:outline-none focus:border-primary transition-colors mt-1.5"
+                      className="w-full bg-secondary  rounded-xl px-4 py-3 text-sm font-mono uppercase focus:outline-none focus:border-primary transition-colors mt-1.5"
                     />
                   </div>
                 </div>
@@ -324,7 +324,7 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
               <div className="space-y-2 text-left bg-secondary rounded-xl p-4">
                 {['Connecting to payment gateway', 'Verifying transaction', 'Crediting to account'].map((s, i) => (
                   <div key={s} className="flex items-center gap-2 text-xs">
-                    <div className={cn("w-1.5 h-1.5 rounded-full", i === 0 ? "bg-primary animate-pulse" : "bg-border")} />
+                    <div className={cn("w-1.5 h-1.5 rounded-full", i === 0 ? "bg-primary animate-pulse" : "bg-")} />
                     <span className={i === 0 ? "text-foreground" : "text-muted-foreground"}>{s}</span>
                   </div>
                 ))}

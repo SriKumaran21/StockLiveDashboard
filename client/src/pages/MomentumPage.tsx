@@ -68,15 +68,15 @@ export function MomentumPage() {
       </div>
 
       {/* Stock list */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden">
-        <div className="px-6 py-3 border-b border-border grid grid-cols-12 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+      <div className="bg-card  rounded-2xl overflow-hidden">
+        <div className="px-6 py-3 border-b  grid grid-cols-12 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
           <span className="col-span-1">#</span>
           <span className="col-span-4">Stock</span>
           <span className="col-span-3 text-right">Price</span>
           <span className="col-span-2 text-right">Change</span>
           <span className="col-span-2 text-right">Momentum</span>
         </div>
-        <div className="divide-y divide-border">
+        <div className="divide-y divide-">
           {filtered.map((stock, i) => {
             const isPos = stock.changePercent >= 0;
             const momentum = Math.min(Math.abs(stock.changePercent) * 10, 100);

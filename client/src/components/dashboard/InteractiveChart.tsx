@@ -5,7 +5,7 @@ import { StockChart } from '@/components/ui/StockChart';
 import { formatCurrency, cn } from '@/lib/format';
 import { ChevronDown } from 'lucide-react';
 
-export function InteractiveChart({ defaultSymbol = 'AAPL' }: { defaultSymbol?: string }) {
+export function InteractiveChart({ defaultSymbol = 'NVDA' }: { defaultSymbol?: string }) {
   const [symbol, setSymbol] = useState(defaultSymbol);
   const [showPicker, setShowPicker] = useState(false);
   const { data: allStocks } = useAllStocks();
@@ -18,9 +18,9 @@ export function InteractiveChart({ defaultSymbol = 'AAPL' }: { defaultSymbol?: s
   const isPositive = changePercent >= 0;
 
   return (
-    <div className="card-fintech p-0 overflow-hidden h-full">
+    <div className="h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+      <div className="flex items-center justify-between px-5 py-4">
         <div className="relative">
           <button onClick={() => setShowPicker(!showPicker)}
             className="flex items-center gap-2 group">
@@ -38,7 +38,7 @@ export function InteractiveChart({ defaultSymbol = 'AAPL' }: { defaultSymbol?: s
 
           {/* Stock Picker Dropdown */}
           {showPicker && (
-            <div className="absolute top-12 left-0 z-30 w-64 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
+            <div className="absolute top-12 left-0 z-30 w-64 bg-card  rounded-2xl shadow-2xl overflow-hidden">
               <div className="p-2 max-h-64 overflow-y-auto">
                 {allStocks?.map(s => (
                   <button key={s.symbol}

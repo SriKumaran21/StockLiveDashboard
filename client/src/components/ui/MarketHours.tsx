@@ -49,10 +49,10 @@ export function MarketHours() {
         const time = getLocalTime(market.timezone);
         return (
           <div key={market.name} className={cn(
-            "flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border",
+            "flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg ",
             open
               ? "bg-[hsl(var(--market-up-bg))] border-[hsl(var(--market-up)/0.2)] text-[hsl(var(--market-up))]"
-              : "bg-secondary border-border text-muted-foreground"
+              : "bg-secondary  text-muted-foreground"
           )}>
             <span className={cn(
               "w-1.5 h-1.5 rounded-full flex-shrink-0",

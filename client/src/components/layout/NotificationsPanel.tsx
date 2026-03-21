@@ -80,14 +80,14 @@ export function NotificationsPanel() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-10 w-80 bg-card border border-border rounded-2xl shadow-2xl shadow-black/40 z-50 overflow-hidden animate-slide-up">
-          <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+        <div className="absolute right-0 top-10 w-80 bg-card  rounded-2xl shadow-2xl shadow-black/40 z-50 overflow-hidden animate-slide-up">
+          <div className="px-4 py-3 border-b  flex items-center justify-between">
             <h3 className="font-display font-bold text-sm">Notifications</h3>
             <button onClick={() => setOpen(false)} className="p-1 rounded-lg hover:bg-secondary transition-colors">
               <X className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
           </div>
-          <div className="max-h-96 overflow-y-auto divide-y divide-border">
+          <div className="max-h-96 overflow-y-auto divide-y divide-">
             {notifications.length === 0 ? (
               <div className="px-4 py-8 text-center text-sm text-muted-foreground">No notifications yet</div>
             ) : notifications.map(n => (

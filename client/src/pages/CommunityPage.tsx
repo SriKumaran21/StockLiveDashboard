@@ -74,7 +74,7 @@ export function CommunityPage() {
           <p className="text-xs text-muted-foreground">Chat with fellow traders in real time</p>
         </div>
         <div className={cn(
-          "flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border",
+          "flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full ",
           connected
             ? "text-[hsl(var(--market-up))] bg-[hsl(var(--market-up-bg))] border-[hsl(var(--market-up)/0.2)]"
             : "text-muted-foreground bg-secondary"

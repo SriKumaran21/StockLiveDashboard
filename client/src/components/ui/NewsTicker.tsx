@@ -31,7 +31,7 @@ export function NewsTicker() {
   const items = [...news, ...news]; // duplicate for seamless loop
 
   return (
-    <div className="w-full bg-[hsl(0,0%,7%)] border-b border-border overflow-hidden">
+    <div className="w-full bg-[hsl(0,0%,7%)] border-b  overflow-hidden">
       <style>{`
         @keyframes news-scroll {
           0%   { transform: translateX(0); }
@@ -57,7 +57,7 @@ export function NewsTicker() {
               const sentiment = getSentiment(article.headline);
               return (
                 <a key={i} href={article.url} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-4 py-1.5 border-r border-border/50 hover:bg-secondary/30 transition-colors flex-shrink-0 max-w-sm">
+                  className="flex items-center gap-2 px-4 py-1.5 border-r  hover:bg-secondary/30 transition-colors flex-shrink-0 max-w-sm">
                   {sentiment !== 'neutral' && (
                     <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded flex-shrink-0",
                       sentiment === 'positive' ? "bg-green-500/15 text-green-500" : "bg-red-500/15 text-red-500")}>

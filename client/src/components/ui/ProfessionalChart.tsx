@@ -102,7 +102,7 @@ export function ProfessionalChart({ symbol, isPositive }: Props) {
 
   return (
     <div className="w-full">
-      <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+      <div className="flex items-center justify-between px-5 py-3 border-b ">
         <div className="flex gap-1 bg-secondary p-1 rounded-xl">
           {RANGES.map(r => (
             <button key={r} onClick={() => setRange(r)}

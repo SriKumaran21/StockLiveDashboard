@@ -32,7 +32,7 @@ function MiniSparkline({ symbol }: { symbol: string }) {
   );
 }
 
-export function WatchlistWidget() {
+export function WatchlistWidget({ fillHeight }: { fillHeight?: boolean }) {
   const { data: watchlist, isLoading } = useWatchlist();
   const { data: allStocks } = useAllStocks();
   const { prices } = useLiveMarket();
@@ -50,7 +50,7 @@ export function WatchlistWidget() {
   });
 
   return (
-    <div className="rounded-2xl overflow-hidden flex flex-col" style={{ background: '#111827', minHeight: 400 }}>
+    <div className="rounded-2xl overflow-hidden flex flex-col" style={{ background: '#161C27', height: fillHeight ? '100%' : undefined, minHeight: fillHeight ? 0 : 400, flex: fillHeight ? 1 : undefined, boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 flex-shrink-0"
         style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>

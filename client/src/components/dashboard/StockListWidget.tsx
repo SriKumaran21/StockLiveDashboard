@@ -27,7 +27,7 @@ export function StockListWidget() {
   const data = getActiveData();
 
   return (
-    <div className="bg-card rounded-2xl overflow-hidden" style={{ background: '#111827' }}>
+    <div className="bg-card rounded-2xl overflow-hidden flex flex-col" style={{ background: '#161C27', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', height: 480 }}>
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4"
         style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
@@ -50,7 +50,7 @@ export function StockListWidget() {
       </div>
 
       {/* Rows */}
-      <div style={{ maxHeight: 380, overflowY: 'auto' }}>
+      <div style={{ flex: 1, overflowY: 'auto' }}>
         {/* Column headers */}
         <div className="flex items-center px-5 py-2"
           style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>

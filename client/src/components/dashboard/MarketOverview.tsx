@@ -33,7 +33,7 @@ export function MarketOverview() {
   }
 
   return (
-    <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+    <div className="grid grid-cols-4 gap-3">
       {displayIndices.map((index, i) => {
         const isPositive = index.change >= 0;
         return (
@@ -41,8 +41,8 @@ export function MarketOverview() {
             key={index.name}
             onClick={() => navigate(`/stock/${indexToSymbol[index.name] || index.name}`)}
             className={cn(
-              "flex-shrink-0 relative rounded-2xl p-4 border overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:border-primary/40",
-              "bg-card border-border w-52"
+              "flex-shrink-0 relative rounded-2xl p-4  overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:border-primary/40",
+              "bg-card  w-52"
             )}
             style={{ animationDelay: `${i * 80}ms` }}
           >

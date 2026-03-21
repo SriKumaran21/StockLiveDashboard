@@ -60,7 +60,7 @@ export function PortfolioPage() {
 
         {/* Returns */}
         <div className={cn(
-          "rounded-2xl p-6 border",
+          "rounded-2xl p-6 ",
           returnsPositive ? "bg-[hsl(var(--market-up-bg))] border-[hsl(var(--market-up)/0.2)]" : "bg-[hsl(var(--market-down-bg))] border-[hsl(var(--market-down)/0.2)]"
         )}>
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
@@ -134,7 +134,7 @@ export function PortfolioPage() {
                   <th className="px-6 py-3"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-">
                 {holdings.map((holding) => {
                   const livePrice = prices[holding.symbol];
                   const currentPrice = livePrice?.price || Number(holding.averagePrice);

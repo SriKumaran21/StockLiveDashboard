@@ -88,7 +88,7 @@ export function ExplorePage() {
         <div className="flex gap-1.5 flex-wrap">
           {SECTORS.map(s => (
             <button key={s} onClick={() => setSector(s)}
-              className={cn("px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all border",
+              className={cn("px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all ",
                 sector === s
                   ? "bg-primary text-black border-primary"
                   : "bg-secondary text-muted-foreground hover:text-foreground")}>
@@ -115,7 +115,7 @@ export function ExplorePage() {
               <th className="px-5 py-3.5 text-center font-semibold w-12">★</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody className="divide-y divide-">
             {displayData?.map((stock) => {
               const inWL = isInWatchlist(stock.symbol);
               const sectorTag = (stock as any).sector;

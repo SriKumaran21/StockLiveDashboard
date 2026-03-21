@@ -36,7 +36,7 @@ export function AuthPage() {
     }
   };
 
-  const inputClass = "w-full bg-[hsl(0,0%,10%)] border border-[hsl(0,0%,18%)] rounded-xl px-4 py-3 pl-11 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all";
+  const inputClass = "w-full bg-[hsl(0,0%,10%)]  border-[hsl(0,0%,18%)] rounded-xl px-4 py-3 pl-11 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all";
 
   return (
     <div className="min-h-screen bg-[hsl(0,0%,6%)] flex flex-col lg:flex-row relative">
@@ -101,7 +101,7 @@ export function AuthPage() {
           </div>
 
           {/* Scrolling ticker */}
-          <div className="rounded-2xl border border-[hsl(0,0%,14%)] bg-[hsl(0,0%,8%)] overflow-hidden">
+          <div className="rounded-2xl  border-[hsl(0,0%,14%)] bg-[hsl(0,0%,8%)] overflow-hidden">
             <div className="px-4 py-2.5 border-b border-[hsl(0,0%,14%)] flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
               <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Live Market Feed</span>
@@ -160,7 +160,7 @@ export function AuthPage() {
           </div>
 
           {/* Toggle */}
-          <div className="flex p-1 bg-[hsl(0,0%,11%)] rounded-xl mb-5 border border-[hsl(0,0%,16%)]">
+          <div className="flex p-1 bg-[hsl(0,0%,11%)] rounded-xl mb-5  border-[hsl(0,0%,16%)]">
             <button onClick={() => { setIsLogin(true); setError(''); }}
               className={cn("flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all",
                 isLogin ? "bg-primary text-black" : "text-muted-foreground hover:text-foreground")}>
@@ -193,7 +193,7 @@ export function AuthPage() {
             </div>
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs px-4 py-3 rounded-xl">
+              <div className="bg-red-500/10  border-red-500/20 text-red-400 text-xs px-4 py-3 rounded-xl">
                 {error}
               </div>
             )}
