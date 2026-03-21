@@ -13,6 +13,7 @@ interface Props {
   showRanges?: boolean;
   height?: number;
   defaultRange?: Range;
+  rangePosition?: 'top' | 'bottom';
 }
 
 function formatTime(ts: string, range: Range): string {
@@ -35,7 +36,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   );
 };
 
-export function StockChart({ symbol, showRanges = true, height = 300, defaultRange = '1M' }: Props) {
+export function StockChart({ symbol, showRanges = true, height = 300, defaultRange = '1M', rangePosition = 'top' }: Props) {
   const [range, setRange] = useState<Range>(defaultRange);
   const { data: history, isLoading } = useStockHistory(symbol, range);
 
@@ -51,26 +52,34 @@ export function StockChart({ symbol, showRanges = true, height = 300, defaultRan
   const lastPrice = prices[prices.length - 1] || 0;
   const isPositive = lastPrice >= firstPrice;
   const color = isPositive ? '#22c55e' : '#ef4444';
-  const gradId = `grad-${symbol}-${isPositive}`;
+  const gradId = `grad-${symbol.replace(/[^a-z0-9]/gi, '')}-${isPositive}`;
+
+  const pctChange = firstPrice > 0 ? (((lastPrice - firstPrice) / firstPrice) * 100).toFixed(2) : '0.00';
+
+  const RangeButtons = () => (
+    <div className="flex items-center gap-1">
+      {RANGES.map(r => (
+        <button key={r} onClick={() => setRange(r)}
+          className={cn(
+            "px-3 py-1.5 text-xs font-semibold rounded-lg transition-all",
+            range === r
+              ? "text-foreground font-bold border-b-2 border-primary bg-transparent"
+              : "text-muted-foreground hover:text-foreground"
+          )}>
+          {r}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <div className="w-full">
-      {showRanges && (
-        <div className="flex items-center justify-between px-5 py-3 border-b border-border">
-          <div className="flex gap-0.5 bg-secondary p-1 rounded-xl">
-            {RANGES.map(r => (
-              <button key={r} onClick={() => setRange(r)}
-                className={cn("px-3 py-1.5 text-xs font-bold rounded-lg transition-all",
-                  range === r ? "bg-primary text-black" : "text-muted-foreground hover:text-foreground")}>
-                {r}
-              </button>
-            ))}
-          </div>
-          <div className="flex gap-3 text-[10px] text-muted-foreground pr-1">
-            <span className={cn("font-mono font-semibold text-xs", isPositive ? "text-green-500" : "text-red-500")}>
-              {isPositive ? '▲' : '▼'} {firstPrice > 0 ? (((lastPrice - firstPrice) / firstPrice) * 100).toFixed(2) : '0.00'}%
-            </span>
-          </div>
+      {showRanges && rangePosition === 'top' && (
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+          <RangeButtons />
+          <span className={cn("text-xs font-mono font-semibold", isPositive ? "text-green-500" : "text-red-500")}>
+            {isPositive ? '▲' : '▼'} {pctChange}%
+          </span>
         </div>
       )}
 
@@ -82,10 +91,11 @@ export function StockChart({ symbol, showRanges = true, height = 300, defaultRan
         )}
         {!isLoading && chartData.length > 0 && (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 8, right: 0, left: -28, bottom: 0 }}>
               <defs>
                 <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={color} stopOpacity={0.15} />
+                  <stop offset="0%" stopColor={color} stopOpacity={0.1} />
+                  <stop offset="80%" stopColor={color} stopOpacity={0.02} />
                   <stop offset="100%" stopColor={color} stopOpacity={0} />
                 </linearGradient>
               </defs>
@@ -94,7 +104,7 @@ export function StockChart({ symbol, showRanges = true, height = 300, defaultRan
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10, fontFamily: 'DM Mono' }}
-                minTickGap={50}
+                minTickGap={55}
                 dy={6}
               />
               <YAxis
@@ -105,13 +115,13 @@ export function StockChart({ symbol, showRanges = true, height = 300, defaultRan
                 tickFormatter={v => v >= 1000 ? `${(v/1000).toFixed(1)}k` : v.toFixed(0)}
                 width={52}
               />
-              <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.15)', strokeWidth: 1, strokeDasharray: '4 4' }} />
-              <ReferenceLine y={firstPrice} stroke="rgba(255,255,255,0.1)" strokeDasharray="4 4" strokeWidth={1} />
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.12)', strokeWidth: 1, strokeDasharray: '4 4' }} />
+              <ReferenceLine y={firstPrice} stroke="rgba(255,255,255,0.08)" strokeDasharray="4 4" strokeWidth={1} />
               <Area
                 type="linear"
                 dataKey="price"
                 stroke={color}
-                strokeWidth={1.5}
+                strokeWidth={2}
                 fill={`url(#${gradId})`}
                 dot={false}
                 activeDot={{ r: 4, fill: color, strokeWidth: 0 }}
@@ -121,6 +131,13 @@ export function StockChart({ symbol, showRanges = true, height = 300, defaultRan
           </ResponsiveContainer>
         )}
       </div>
+
+      {/* Groww-style range buttons BELOW chart */}
+      {showRanges && rangePosition === 'bottom' && (
+        <div className="flex items-center justify-center gap-1 px-4 py-3 border-t border-border/40">
+          <RangeButtons />
+        </div>
+      )}
     </div>
   );
 }

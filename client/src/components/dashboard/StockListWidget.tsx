@@ -1,123 +1,115 @@
 import React, { useState } from 'react';
 import { useGainersLosers, useAllStocks } from '@/hooks/use-stocks';
-import { LivePrice } from '@/components/ui/LivePrice';
-import { cn } from '@/lib/format';
-import { TrendingUp, TrendingDown } from 'lucide-react';
-import { useLocation } from 'wouter';
+import { useLiveMarket } from '@/hooks/use-live-market';
 import { StockIcon } from '@/components/ui/StockIcon';
+import { cn } from '@/lib/format';
+import { useLocation } from 'wouter';
 
 export function StockListWidget() {
   const [tab, setTab] = useState<'gainers' | 'losers'>('gainers');
   const [, navigate] = useLocation();
-
   const { data: gainers } = useGainersLosers('gainers');
   const { data: losers } = useGainersLosers('losers');
   const { data: allStocks } = useAllStocks();
+  const { prices } = useLiveMarket();
 
-  // Fallback: if API returns empty array (Finnhub free tier often returns 0 change),
-  // sort all stocks by changePercent instead
   const getActiveData = () => {
-    if (tab === 'gainers') {
-      if (gainers && gainers.length > 0) return gainers.slice(0, 8);
-      // fallback: top 8 by changePercent descending from allStocks
-      return allStocks
-        ?.slice()
-        .sort((a, b) => b.changePercent - a.changePercent)
-        .slice(0, 8);
-    } else {
-      if (losers && losers.length > 0) return losers.slice(0, 8);
-      // fallback: bottom 8 by changePercent ascending from allStocks
-      return allStocks
-        ?.slice()
-        .sort((a, b) => a.changePercent - b.changePercent)
-        .slice(0, 8);
-    }
+    const base = tab === 'gainers' ? gainers : losers;
+    if (base && base.length > 0) return base.slice(0, 8);
+    return allStocks
+      ?.slice()
+      .sort((a, b) => tab === 'gainers'
+        ? b.changePercent - a.changePercent
+        : a.changePercent - b.changePercent)
+      .slice(0, 8);
   };
 
-  const activeData = getActiveData();
+  const data = getActiveData();
 
   return (
-    <div className="bg-card border border-border/50 rounded-2xl shadow-lg shadow-black/5 overflow-hidden flex flex-col">
-      <div className="px-6 py-4 border-b border-border/50 flex justify-between items-center bg-muted/20">
-        <h3 className="text-lg font-display font-bold">Market Movers</h3>
-        <div className="flex bg-secondary p-1 rounded-xl">
-          <button
-            onClick={() => setTab('gainers')}
-            className={cn(
-              "px-4 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all duration-200",
-              tab === 'gainers'
-                ? "bg-background text-[hsl(var(--market-up))] shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <TrendingUp className="w-3.5 h-3.5" /> Gainers
-          </button>
-          <button
-            onClick={() => setTab('losers')}
-            className={cn(
-              "px-4 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-all duration-200",
-              tab === 'losers'
-                ? "bg-background text-[hsl(var(--market-down))] shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <TrendingDown className="w-3.5 h-3.5" /> Losers
-          </button>
+    <div className="bg-card rounded-2xl overflow-hidden" style={{ background: '#111827' }}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-4"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <h3 style={{ fontFamily: 'Manrope', fontWeight: 700, fontSize: 14, color: '#E5E7EB' }}>
+          Market Movers
+        </h3>
+        <div className="flex p-0.5 rounded-lg" style={{ background: 'rgba(255,255,255,0.04)' }}>
+          {(['gainers', 'losers'] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              className="px-3 py-1.5 rounded-md transition-all"
+              style={{
+                fontSize: 11, fontWeight: 600, fontFamily: 'Inter',
+                background: tab === t ? (t === 'gainers' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)') : 'transparent',
+                color: tab === t ? (t === 'gainers' ? '#22C55E' : '#EF4444') : '#6B7280',
+              }}>
+              {t.charAt(0).toUpperCase() + t.slice(1)}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto max-h-[400px]">
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs text-muted-foreground bg-muted/10 sticky top-0 backdrop-blur-md">
-            <tr>
-              <th className="px-6 py-4 font-semibold uppercase tracking-wider">Company</th>
-              <th className="px-6 py-4 font-semibold uppercase tracking-wider text-right">Price</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border/50">
-            {activeData?.map((stock) => (
-              <tr
-                key={stock.symbol}
-                className="hover:bg-muted/30 transition-colors group cursor-pointer"
-                onClick={() => navigate(`/stock/${stock.symbol}`)}
-              >
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <StockIcon symbol={stock.symbol} size={28} />
-                    <div>
-                      <div className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                        {stock.symbol}
-                      </div>
-                      <div className="text-xs text-muted-foreground truncate max-w-[120px]">
-                        {stock.company}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <LivePrice
-                    symbol={stock.symbol}
-                    initialPrice={stock.price}
-                    initialChangePercent={stock.changePercent}
-                    showChange={true}
-                    className="justify-end"
-                  />
-                </td>
-              </tr>
-            ))}
+      {/* Rows */}
+      <div style={{ maxHeight: 380, overflowY: 'auto' }}>
+        {/* Column headers */}
+        <div className="flex items-center px-5 py-2"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+          <span style={{ flex: 1, fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Company</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Price</span>
+        </div>
 
-            {!activeData && (
-              <tr>
-                <td colSpan={2} className="px-6 py-12 text-center text-muted-foreground">
-                  <div className="animate-pulse space-y-4">
-                    <div className="h-4 bg-muted rounded w-3/4 mx-auto" />
-                    <div className="h-4 bg-muted rounded w-1/2 mx-auto" />
-                  </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        {!data ? (
+          <div className="px-5 py-8 space-y-3">
+            {[1,2,3,4].map(i => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="skeleton w-8 h-8 rounded-full" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="skeleton h-3 w-24 rounded" />
+                  <div className="skeleton h-2 w-16 rounded" />
+                </div>
+                <div className="skeleton h-4 w-20 rounded" />
+              </div>
+            ))}
+          </div>
+        ) : data.map((stock, i) => {
+          const live = prices[stock.symbol];
+          const price = live?.price ?? stock.price;
+          const pct = live?.changePercent ?? stock.changePercent;
+          const isUp = pct >= 0;
+
+          return (
+            <div key={stock.symbol}
+              onClick={() => navigate(`/stock/${stock.symbol}`)}
+              className="flex items-center gap-3 px-5 cursor-pointer group"
+              style={{
+                height: 52,
+                borderBottom: i < data.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
+                transition: 'background 150ms ease',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.025)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+              <StockIcon symbol={stock.symbol} size={28} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#E5E7EB', fontFamily: 'Manrope' }}
+                  className="truncate group-hover:text-blue-400 transition-colors">
+                  {stock.symbol.replace('.NS','').replace('.BO','')}
+                </p>
+                <p style={{ fontSize: 11, color: '#6B7280' }} className="truncate">{stock.company}</p>
+              </div>
+              <div className="text-right">
+                <p style={{ fontSize: 13, fontWeight: 600, fontFamily: 'JetBrains Mono', color: '#E5E7EB' }}>
+                  ₹{price.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                </p>
+                <span style={{
+                  fontSize: 11, fontWeight: 600, fontFamily: 'JetBrains Mono',
+                  color: isUp ? '#22C55E' : '#EF4444',
+                }}>
+                  {isUp ? '+' : ''}{pct.toFixed(2)}%
+                </span>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

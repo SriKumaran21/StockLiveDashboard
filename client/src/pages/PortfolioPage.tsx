@@ -37,7 +37,7 @@ export function PortfolioPage() {
       {/* Top stats row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {/* Balance */}
-        <div className="sm:col-span-1 bg-card border border-border rounded-2xl p-6">
+        <div className="sm:col-span-1 bg-card border-0 rounded-2xl p-6">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
             <Wallet className="w-3.5 h-3.5" /> Available Balance
           </p>
@@ -50,7 +50,7 @@ export function PortfolioPage() {
         </div>
 
         {/* Invested */}
-        <div className="bg-card border border-border rounded-2xl p-6">
+        <div className="bg-card border-0 rounded-2xl p-6">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Invested</p>
           <p className="text-2xl font-display font-bold font-mono tracking-tight truncate">
             {compactNumber(portfolio?.totalCost || 0)}
@@ -78,7 +78,7 @@ export function PortfolioPage() {
 
       {/* Pie Chart */}
       {hasHoldings && pieData.length > 0 && (
-        <div className="bg-card border border-border rounded-2xl p-5">
+        <div className="bg-card border-0 rounded-2xl p-5">
           <h2 className="font-display font-bold text-sm mb-4">Portfolio Allocation</h2>
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <div style={{ width: 200, height: 200 }} className="flex-shrink-0">
@@ -117,14 +117,14 @@ export function PortfolioPage() {
 
       {/* Holdings */}
       {hasHoldings ? (
-        <div className="bg-card border border-border rounded-2xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-border">
+        <div className="bg-card border-0 rounded-2xl overflow-hidden">
+          <div className="px-6 py-4 border-b">
             <h2 className="font-display font-bold text-base">Your Holdings</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
+                <tr className="text-xs text-muted-foreground uppercase tracking-wider border-b">
                   <th className="px-6 py-3 text-left font-semibold">Stock</th>
                   <th className="px-6 py-3 text-right font-semibold">Shares</th>
                   <th className="px-6 py-3 text-right font-semibold">Avg Cost</th>
@@ -178,7 +178,7 @@ export function PortfolioPage() {
           </div>
         </div>
       ) : (
-        <div className="bg-card border border-border rounded-2xl p-12 text-center">
+        <div className="bg-card border-0 rounded-2xl p-12 text-center">
           <div className="w-14 h-14 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4">
             <BarChart2 className="w-7 h-7 text-muted-foreground" />
           </div>

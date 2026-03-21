@@ -24,8 +24,8 @@ export function MarketHeatmap() {
   }
 
   return (
-    <div className="bg-card border border-border rounded-2xl overflow-hidden">
-      <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+    <div className="bg-card border-0 rounded-2xl overflow-hidden">
+      <div className="px-5 py-4 border-b flex items-center justify-between">
         <h3 className="font-display font-bold text-sm">Market Heatmap</h3>
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
           <span className="w-3 h-3 rounded bg-red-500 inline-block" /> Falling

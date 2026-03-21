@@ -6,40 +6,49 @@ import { Calendar, Tag } from 'lucide-react';
 export function IPOCarousel() {
   const { data: ipos, isLoading } = useIPOs();
 
-  if (isLoading) return <div className="h-48 bg-muted animate-pulse rounded-2xl" />;
-  if (!ipos || ipos.length === 0) return null;
+  if (isLoading) return (
+    <div className="space-y-3">
+      <div className="skeleton h-4 w-32 rounded" />
+      <div className="flex gap-3">
+        {[1,2].map(i => <div key={i} className="skeleton h-40 w-56 rounded-2xl flex-shrink-0" />)}
+      </div>
+    </div>
+  );
+
+  if (!ipos?.length) return null;
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-xl font-display font-bold">Upcoming IPOs</h3>
-      
-      <div className="flex overflow-x-auto gap-4 pb-4 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
-        {ipos.map((ipo, idx) => (
-          <div 
-            key={idx} 
-            className="flex-none w-72 bg-card border border-border/50 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-shadow relative overflow-hidden group"
-          >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110" />
-            
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider bg-primary/10 text-primary rounded-full">IPO</span>
+    <div className="space-y-3">
+      <h3 style={{ fontFamily: 'Manrope', fontWeight: 700, fontSize: 14, color: '#E5E7EB' }}>
+        Upcoming IPOs
+      </h3>
+      <div className="flex overflow-x-auto gap-3 pb-2 no-scrollbar -mx-1 px-1">
+        {ipos.map((ipo, i) => (
+          <div key={i} className="flex-none rounded-2xl p-4 transition-all hover:scale-[1.01]"
+            style={{ width: 220, background: '#111827', border: 'none' }}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider"
+                style={{ background: 'rgba(59,130,246,0.12)', color: '#3B82F6' }}>
+                IPO
+              </span>
+            </div>
+            <h4 style={{ fontSize: 14, fontWeight: 700, color: '#E5E7EB', fontFamily: 'Manrope', marginBottom: 12 }}
+              className="truncate" title={ipo.company}>
+              {ipo.company}
+            </h4>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2" style={{ fontSize: 12, color: '#6B7280' }}>
+                <Calendar style={{ width: 12, height: 12, color: '#3B82F6' }} />
+                <span>{format(new Date(ipo.openDate), 'MMM d')} – {format(new Date(ipo.closeDate), 'MMM d, yyyy')}</span>
               </div>
-              <h4 className="font-semibold text-lg mb-4 truncate text-foreground" title={ipo.company}>{ipo.company}</h4>
-              
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <Calendar className="w-4 h-4 text-primary" />
-                  <span>{format(new Date(ipo.openDate), 'MMM d')} - {format(new Date(ipo.closeDate), 'MMM d, yyyy')}</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <Tag className="w-4 h-4 text-primary" />
-                  <span className="font-mono">₹{ipo.priceRange}</span>
-                </div>
-                <div className="pt-3 mt-3 border-t border-border/50 flex justify-between items-center">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Min Qty</span>
-                  <span className="text-sm font-bold">{ipo.minQty} Shares</span>
-                </div>
+              <div className="flex items-center gap-2" style={{ fontSize: 12, color: '#6B7280' }}>
+                <Tag style={{ width: 12, height: 12, color: '#3B82F6' }} />
+                <span style={{ fontFamily: 'JetBrains Mono' }}>₹{ipo.priceRange}</span>
+              </div>
+              <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '8px 0' }} />
+              <div className="flex justify-between">
+                <span style={{ fontSize: 11, color: '#6B7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Min Qty</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#E5E7EB', fontFamily: 'JetBrains Mono' }}>{ipo.minQty} shares</span>
               </div>
             </div>
           </div>

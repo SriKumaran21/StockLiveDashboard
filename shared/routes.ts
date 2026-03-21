@@ -23,7 +23,8 @@ export const stockSchema = z.object({
   price: z.number(),
   change: z.number(),
   changePercent: z.number(),
-  volume: z.number()
+  volume: z.number(),
+  sector: z.string().optional(),
 });
 
 export const ipoSchema = z.object({

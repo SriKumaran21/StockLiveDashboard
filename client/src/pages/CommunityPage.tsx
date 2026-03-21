@@ -77,7 +77,7 @@ export function CommunityPage() {
           "flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border",
           connected
             ? "text-[hsl(var(--market-up))] bg-[hsl(var(--market-up-bg))] border-[hsl(var(--market-up)/0.2)]"
-            : "text-muted-foreground bg-secondary border-border"
+            : "text-muted-foreground bg-secondary"
         )}>
           <span className={cn("w-1.5 h-1.5 rounded-full", connected ? "bg-[hsl(var(--market-up))] animate-pulse" : "bg-muted")} />
           {connected ? 'Live' : 'Connecting…'}
@@ -85,7 +85,7 @@ export function CommunityPage() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 bg-card border border-border rounded-2xl overflow-hidden flex flex-col">
+      <div className="flex-1 bg-card border-0 rounded-2xl overflow-hidden flex flex-col">
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {messages.length === 0 && (
             <div className="h-full flex items-center justify-center">
@@ -121,7 +121,7 @@ export function CommunityPage() {
         </div>
 
         {/* Input */}
-        <div className="border-t border-border p-3">
+        <div className="border-t p-3">
           <div className="flex items-center gap-2 bg-secondary rounded-xl px-4 py-2 focus-within:ring-1 focus-within:ring-primary transition-all">
             <input
               type="text"

@@ -3,41 +3,31 @@ import { useParams, Link } from 'wouter';
 import { useStockBySymbol } from '@/hooks/use-stocks';
 import { useLiveMarket } from '@/hooks/use-live-market';
 import { useBuyStock, useSellStock, useHoldings } from '@/hooks/use-trading';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '@shared/routes';
 import { formatCurrency, formatNumber, cn } from '@/lib/format';
 import { LivePrice } from '@/components/ui/LivePrice';
 import { StockChart } from '@/components/ui/StockChart';
 import { StockIcon } from '@/components/ui/StockIcon';
-
-const POSITIVE_WORDS = ['surge', 'rally', 'gain', 'rise', 'up', 'high', 'beat', 'profit', 'growth', 'bullish', 'strong', 'buy', 'upgrade', 'record', 'boost'];
-const NEGATIVE_WORDS = ['fall', 'drop', 'loss', 'down', 'crash', 'bearish', 'sell', 'downgrade', 'weak', 'decline', 'cut', 'miss', 'risk', 'warn', 'low'];
-
-function getSentiment(text: string): 'positive' | 'negative' | 'neutral' {
-  const lower = text.toLowerCase();
-  const pos = POSITIVE_WORDS.filter(w => lower.includes(w)).length;
-  const neg = NEGATIVE_WORDS.filter(w => lower.includes(w)).length;
-  if (pos > neg) return 'positive';
-  if (neg > pos) return 'negative';
-  return 'neutral';
-}
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { AddFundsDialog } from '@/components/user/AddFundsDialog';
+import { useAuth } from '@/hooks/use-auth';
 import {
   ArrowLeft, TrendingUp, TrendingDown, Plus, Minus,
-  Loader2, ExternalLink, Newspaper, BarChart2, Clock, Wallet,
+  Loader2, BarChart2, Clock, Wallet, RefreshCw,
 } from 'lucide-react';
 
 export default function StockDetailPage() {
   const { symbol } = useParams<{ symbol: string }>();
   const [quantity, setQuantity] = useState(1);
   const [orderType, setOrderType] = useState<'buy' | 'sell'>('buy');
+  const [showDeposit, setShowDeposit] = useState(false);
 
   const { data: stock, isLoading: stockLoading } = useStockBySymbol(symbol || '');
   const { prices } = useLiveMarket();
   const buyMutation = useBuyStock();
   const sellMutation = useSellStock();
   const { data: holdings } = useHoldings();
+  const { user } = useAuth();
 
   const livePrice = prices[symbol?.toUpperCase() || ''];
   const isPositive = (stock?.change ?? 0) >= 0;
@@ -46,21 +36,12 @@ export default function StockDetailPage() {
   const changePct = livePrice?.changePercent ?? stock?.changePercent ?? 0;
   const priceChange = stock?.change ?? 0;
 
-  const { data: news } = useQuery({
-    queryKey: ['news', symbol],
-    queryFn: async () => {
-      const url = new URL(api.news.bySymbol.path, window.location.origin);
-      url.searchParams.set('symbol', symbol || 'AAPL');
-      const res = await fetch(url.toString());
-      if (!res.ok) throw new Error('Failed to fetch news');
-      return res.json();
-    },
-    enabled: !!symbol,
-    staleTime: 300000,
-  });
-
   const handleTrade = () => {
     if (!symbol || quantity <= 0) return;
+    if (orderType === 'buy' && Number(user?.balance || 0) < currentPrice * quantity) {
+      setShowDeposit(true);
+      return;
+    }
     const tradeData = { symbol: symbol.toUpperCase(), quantity, price: currentPrice };
     if (orderType === 'buy') buyMutation.mutate(tradeData);
     else sellMutation.mutate(tradeData);
@@ -121,21 +102,16 @@ export default function StockDetailPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-        {/* Left — Chart + Stats + News */}
+        {/* Left — Chart + Stats */}
         <div className="lg:col-span-2 space-y-4">
-          {/* Chart */}
-          <div className="bg-card border border-border rounded-2xl overflow-hidden">
-            <div className="px-5 py-3 border-b border-border flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <BarChart2 className="w-4 h-4 text-muted-foreground" />
-                <span className="font-display font-bold text-sm">Price Chart</span>
-              </div>
-
+          <div className="bg-card border-0 rounded-2xl overflow-hidden">
+            <div className="px-5 py-3 border-b flex items-center gap-2">
+              <BarChart2 className="w-4 h-4 text-muted-foreground" />
+              <span className="font-display font-bold text-sm">Price Chart</span>
             </div>
-            <StockChart symbol={symbol || 'AAPL'} height={460} />
+            <StockChart symbol={symbol || 'AAPL'} height={420} rangePosition="bottom" />
           </div>
 
-          {/* Stats strip */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-border rounded-2xl overflow-hidden">
             {[
               { label: 'Current Price', value: <LivePrice symbol={stock.symbol} initialPrice={stock.price} initialChangePercent={stock.changePercent} showChange={false} className="text-base font-bold font-mono" /> },
@@ -149,60 +125,12 @@ export default function StockDetailPage() {
               </div>
             ))}
           </div>
-
-          {/* News */}
-          {news && news.length > 0 && (
-            <div className="bg-card border border-border rounded-2xl overflow-hidden">
-              <div className="px-5 py-3 border-b border-border flex items-center gap-2">
-                <Newspaper className="w-4 h-4 text-muted-foreground" />
-                <span className="font-display font-bold text-sm">Latest News</span>
-              </div>
-              <div className="divide-y divide-border">
-                {news.slice(0, 5).map((article: any, i: number) => (
-                  <a key={i} href={article.url} target="_blank" rel="noopener noreferrer"
-                    className="flex gap-3 p-4 hover:bg-secondary/30 transition-colors group">
-                    {article.image && (
-                      <img src={article.image} alt=""
-                        className="w-14 h-14 rounded-xl object-cover flex-shrink-0 bg-secondary"
-                        onError={e => (e.currentTarget.style.display = 'none')} />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-                        {article.headline}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[11px] text-muted-foreground">{article.source}</span>
-                        <span className="text-[11px] text-muted-foreground">·</span>
-                        <span className="text-[11px] text-muted-foreground">
-                          {new Date(article.datetime * 1000).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
-                        </span>
-                        {(() => {
-                          const s = getSentiment(article.headline);
-                          return s !== 'neutral' ? (
-                            <span className={cn(
-                              "ml-auto text-[10px] font-bold px-2 py-0.5 rounded-md",
-                              s === 'positive'
-                                ? "bg-[hsl(var(--market-up-bg))] text-[hsl(var(--market-up))]"
-                                : "bg-[hsl(var(--market-down-bg))] text-[hsl(var(--market-down))]"
-                            )}>
-                              {s === 'positive' ? '▲ Bullish' : '▼ Bearish'}
-                            </span>
-                          ) : <ExternalLink className="w-3 h-3 text-muted-foreground ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />;
-                        })()}
-                      </div>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Right — Trade Panel */}
         <div className="lg:col-span-1">
-          <div className="bg-card border border-border rounded-2xl p-5 sticky top-20 space-y-5">
-            {/* Price display */}
-            <div className="pb-4 border-b border-border">
+          <div className="bg-card border-0 rounded-2xl p-5 sticky top-20 space-y-5">
+            <div className="pb-4 border-b">
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Market Price</p>
               <p className="text-3xl font-display font-bold font-mono">{formatCurrency(currentPrice)}</p>
               <p className={cn("text-xs font-mono mt-0.5", isPositive ? "text-[hsl(var(--market-up))]" : "text-[hsl(var(--market-down))]")}>
@@ -210,20 +138,20 @@ export default function StockDetailPage() {
               </p>
             </div>
 
-            {/* Buy / Sell */}
             <div className="flex p-1 bg-secondary rounded-xl">
               <button onClick={() => setOrderType('buy')}
                 className={cn("flex-1 py-2.5 rounded-lg text-sm font-bold transition-all",
-                  orderType === 'buy' ? "bg-[hsl(var(--market-up))] text-black shadow-md" : "text-muted-foreground hover:text-foreground")}
-              >Buy</button>
+                  orderType === 'buy' ? "bg-[hsl(var(--market-up))] text-black shadow-md" : "text-muted-foreground hover:text-foreground")}>
+                Buy
+              </button>
               <button onClick={() => setOrderType('sell')}
                 disabled={!holding || Number(holding.quantity) === 0}
                 className={cn("flex-1 py-2.5 rounded-lg text-sm font-bold transition-all",
-                  orderType === 'sell' ? "bg-[hsl(var(--market-down))] text-white shadow-md" : "text-muted-foreground hover:text-foreground disabled:opacity-30")}
-              >Sell</button>
+                  orderType === 'sell' ? "bg-[hsl(var(--market-down))] text-white shadow-md" : "text-muted-foreground hover:text-foreground disabled:opacity-30")}>
+                Sell
+              </button>
             </div>
 
-            {/* Quantity */}
             <div className="space-y-2">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Quantity</label>
               <div className="flex items-center gap-2">
@@ -241,7 +169,6 @@ export default function StockDetailPage() {
               </div>
             </div>
 
-            {/* Order summary */}
             <div className="bg-secondary rounded-xl p-4 space-y-2">
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Price per share</span>
@@ -251,24 +178,22 @@ export default function StockDetailPage() {
                 <span>Quantity</span>
                 <span className="font-mono font-semibold text-foreground">{quantity}</span>
               </div>
-              <div className="flex justify-between pt-2 border-t border-border">
+              <div className="flex justify-between pt-2 border-t">
                 <span className="text-sm font-bold">Total</span>
                 <span className="font-mono font-bold text-lg">{formatCurrency(currentPrice * quantity)}</span>
               </div>
             </div>
 
-            {/* Submit */}
             <button onClick={handleTrade}
               disabled={buyMutation.isPending || sellMutation.isPending}
               className={cn(
                 "w-full py-3.5 rounded-xl font-bold text-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-50",
                 orderType === 'buy' ? "bg-[hsl(var(--market-up))] text-black" : "bg-[hsl(var(--market-down))] text-white"
               )}>
-              {buyMutation.isPending || sellMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-              ) : (
-                `${orderType === 'buy' ? 'Buy' : 'Sell'} ${quantity} share${quantity > 1 ? 's' : ''} · ${formatCurrency(currentPrice * quantity)}`
-              )}
+              {buyMutation.isPending || sellMutation.isPending
+                ? <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                : `${orderType === 'buy' ? 'Buy' : 'Sell'} ${quantity} share${quantity > 1 ? 's' : ''} · ${formatCurrency(currentPrice * quantity)}`
+              }
             </button>
 
             {holding && (
@@ -285,8 +210,28 @@ export default function StockDetailPage() {
               <p className="text-xs text-muted-foreground text-center">You don't own any {stock.symbol} shares</p>
             )}
           </div>
+        {/* SIP Banner */}
+          <div className="bg-secondary/50 rounded-2xl px-5 py-3.5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <RefreshCw className="w-4 h-4 text-primary flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold">Create Stock SIP</p>
+                <p className="text-xs text-muted-foreground">Automate your {stock.symbol} investments</p>
+              </div>
+            </div>
+            <button onClick={() => alert('Coming soon!')}
+              className="text-xs font-semibold text-primary hover:underline">
+              Set up →
+            </button>
+          </div>
         </div>
       </div>
+
+      <AddFundsDialog
+        isOpen={showDeposit}
+        onClose={() => setShowDeposit(false)}
+        currentBalance={user?.balance || 0}
+      />
     </div>
   );
 }

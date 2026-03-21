@@ -23,27 +23,20 @@ function get<T>(path: string): Promise<T> {
 }
 
 export async function getQuote(symbol: string) {
-  if (symbol.endsWith(".NS") || symbol.endsWith(".BO")) {
-    return getYahooQuote(symbol);
-  }
+  if (symbol.endsWith(".NS") || symbol.endsWith(".BO")) return getYahooQuote(symbol);
   const data = await get<any>(`/quote?symbol=${symbol}`);
   return {
     symbol,
-    price: data.c ?? 0,
-    change: data.d ?? 0,
-    changePercent: data.dp ?? 0,
-    high: data.h ?? 0,
-    low: data.l ?? 0,
-    open: data.o ?? 0,
+    price: data.c ?? 0, change: data.d ?? 0, changePercent: data.dp ?? 0,
+    high: data.h ?? 0, low: data.l ?? 0, open: data.o ?? 0,
   };
 }
 
 export async function getYahooQuote(symbol: string) {
   return new Promise<{ symbol: string; price: number; change: number; changePercent: number; high: number; low: number; open: number }>((resolve, reject) => {
-    const encodedSymbol = encodeURIComponent(symbol);
     const options = {
       hostname: "query1.finance.yahoo.com",
-      path: `/v8/finance/chart/${encodedSymbol}?interval=1d&range=1d`,
+      path: `/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1d`,
       method: "GET",
       headers: { "User-Agent": "Mozilla/5.0", "Accept": "application/json" },
     };
@@ -69,10 +62,9 @@ export async function getYahooQuote(symbol: string) {
 export async function getYahooCandles(symbol: string, range: string) {
   const { interval, yahooRange } = rangeToYahooParams(range);
   return new Promise<Array<{ timestamp: string; price: number; open: number; high: number; low: number; volume: number }>>((resolve, reject) => {
-    const encodedSymbol = encodeURIComponent(symbol);
     const options = {
       hostname: "query1.finance.yahoo.com",
-      path: `/v8/finance/chart/${encodedSymbol}?interval=${interval}&range=${yahooRange}`,
+      path: `/v8/finance/chart/${encodeURIComponent(symbol)}?interval=${interval}&range=${yahooRange}`,
       method: "GET",
       headers: { "User-Agent": "Mozilla/5.0", "Accept": "application/json" },
     };
@@ -128,9 +120,7 @@ function rangeToFinnhubParams(range: string): { resolution: string; fromOffset: 
 }
 
 export async function getCandles(symbol: string, range: string = "1M") {
-  if (symbol.endsWith(".NS") || symbol.endsWith(".BO")) {
-    return getYahooCandles(symbol, range);
-  }
+  if (symbol.endsWith(".NS") || symbol.endsWith(".BO")) return getYahooCandles(symbol, range);
   try {
     const { resolution, fromOffset } = rangeToFinnhubParams(range);
     const to = Math.floor(Date.now() / 1000);
@@ -169,33 +159,55 @@ export async function getIPOCalendar() {
   }));
 }
 
+// ── Indices — Indian + US ─────────────────────────────────
 export const INDEX_SYMBOLS = [
-  { symbol: "SPY", name: "S&P 500" },
-  { symbol: "QQQ", name: "Nasdaq 100" },
-  { symbol: "DIA", name: "Dow Jones" },
+  { symbol: "^NSEI",  name: "Nifty 50" },
+  { symbol: "^BSESN", name: "Sensex" },
+  { symbol: "SPY",    name: "S&P 500" },
+  { symbol: "QQQ",    name: "Nasdaq" },
 ];
 
+// ── Stocks with sector tags ───────────────────────────────
 export const DEFAULT_STOCKS = [
-  { symbol: "AAPL",          company: "Apple Inc." },
-  { symbol: "MSFT",          company: "Microsoft Corp." },
-  { symbol: "GOOGL",         company: "Alphabet Inc." },
-  { symbol: "TSLA",          company: "Tesla Inc." },
-  { symbol: "AMZN",          company: "Amazon.com Inc." },
-  { symbol: "NVDA",          company: "NVIDIA Corp." },
-  { symbol: "META",          company: "Meta Platforms" },
-  { symbol: "NFLX",          company: "Netflix Inc." },
-  { symbol: "AMD",           company: "Advanced Micro Devices" },
-  { symbol: "INTC",          company: "Intel Corp." },
-  { symbol: "V",             company: "Visa Inc." },
-  { symbol: "BABA",          company: "Alibaba Group" },
-  { symbol: "RELIANCE.NS",   company: "Reliance Industries" },
-  { symbol: "TCS.NS",        company: "Tata Consultancy Services" },
-  { symbol: "INFY.NS",       company: "Infosys Ltd." },
-  { symbol: "HDFCBANK.NS",   company: "HDFC Bank Ltd." },
-  { symbol: "ICICIBANK.NS",  company: "ICICI Bank Ltd." },
-  { symbol: "WIPRO.NS",      company: "Wipro Ltd." },
-  { symbol: "SBIN.NS",       company: "State Bank of India" },
-  { symbol: "TATAMOTORS.NS", company: "Tata Motors Ltd." },
-  { symbol: "BAJFINANCE.NS", company: "Bajaj Finance Ltd." },
-  { symbol: "ADANIENT.NS",   company: "Adani Enterprises" },
+  // 🇮🇳 Nifty 50 / Sensex — Banking & Finance
+  { symbol: "HDFCBANK.NS",    company: "HDFC Bank",              sector: "Banking" },
+  { symbol: "ICICIBANK.NS",   company: "ICICI Bank",             sector: "Banking" },
+  { symbol: "SBIN.NS",        company: "State Bank of India",    sector: "Banking" },
+  { symbol: "KOTAKBANK.NS",   company: "Kotak Mahindra Bank",    sector: "Banking" },
+  { symbol: "AXISBANK.NS",    company: "Axis Bank",              sector: "Banking" },
+  { symbol: "BAJFINANCE.NS",  company: "Bajaj Finance",          sector: "Finance" },
+  // 🇮🇳 IT
+  { symbol: "TCS.NS",         company: "Tata Consultancy",       sector: "IT" },
+  { symbol: "INFY.NS",        company: "Infosys",                sector: "IT" },
+  { symbol: "WIPRO.NS",       company: "Wipro",                  sector: "IT" },
+  { symbol: "HCLTECH.NS",     company: "HCL Technologies",       sector: "IT" },
+  { symbol: "TECHM.NS",       company: "Tech Mahindra",          sector: "IT" },
+  // 🇮🇳 Energy & Industrial
+  { symbol: "RELIANCE.NS",    company: "Reliance Industries",    sector: "Energy" },
+  { symbol: "NTPC.NS",        company: "NTPC",                   sector: "Energy" },
+  { symbol: "POWERGRID.NS",   company: "Power Grid Corp",        sector: "Energy" },
+  { symbol: "ONGC.NS",        company: "ONGC",                   sector: "Energy" },
+  { symbol: "LT.NS",          company: "Larsen & Toubro",        sector: "Industrial" },
+  // 🇮🇳 Consumer & Auto
+  { symbol: "HINDUNILVR.NS",  company: "Hindustan Unilever",     sector: "Consumer" },
+  { symbol: "ITC.NS",         company: "ITC Ltd",                sector: "Consumer" },
+  { symbol: "MARUTI.NS",      company: "Maruti Suzuki",          sector: "Auto" },
+  { symbol: "TATAMOTORS.NS",  company: "Tata Motors",            sector: "Auto" },
+  { symbol: "TITAN.NS",       company: "Titan Company",          sector: "Consumer" },
+  // 🇮🇳 Pharma & Telecom
+  { symbol: "SUNPHARMA.NS",   company: "Sun Pharma",             sector: "Pharma" },
+  { symbol: "BHARTIARTL.NS",  company: "Bharti Airtel",          sector: "Telecom" },
+  { symbol: "ADANIENT.NS",    company: "Adani Enterprises",      sector: "Industrial" },
+  // 🇺🇸 US Tech
+  { symbol: "AAPL",           company: "Apple Inc.",             sector: "Tech" },
+  { symbol: "MSFT",           company: "Microsoft",              sector: "Tech" },
+  { symbol: "GOOGL",          company: "Alphabet",               sector: "Tech" },
+  { symbol: "NVDA",           company: "NVIDIA",                 sector: "Tech" },
+  { symbol: "META",           company: "Meta Platforms",         sector: "Tech" },
+  { symbol: "AMZN",           company: "Amazon",                 sector: "Tech" },
+  { symbol: "TSLA",           company: "Tesla",                  sector: "Auto" },
+  { symbol: "NFLX",           company: "Netflix",                sector: "Tech" },
+  { symbol: "AMD",            company: "AMD",                    sector: "Tech" },
+  { symbol: "INTC",           company: "Intel",                  sector: "Tech" },
+  { symbol: "V",              company: "Visa",                   sector: "Finance" },
 ];

@@ -13,6 +13,7 @@ import { promisify } from "util";
 const scryptAsync = promisify(scrypt);
 import {
   getQuote,
+  getYahooQuote,
   getCandles,
   getCompanyNews,
   getIPOCalendar,
@@ -64,6 +65,12 @@ export async function registerRoutes(
       cookie: { secure: false },
     })
   );
+
+  // Index symbol mapping
+  const INDEX_SYMBOL_MAP: Record<string, string> = {
+    'NIFTY50': '^NSEI',
+    'SENSEX':  '^BSESN',
+  };
 
   // ── Auth Routes ─────────────────────────────────────────
   app.post(api.auth.register.path, async (req, res) => {
@@ -146,13 +153,8 @@ export async function registerRoutes(
     try {
       const results = await Promise.all(
         INDEX_SYMBOLS.map(async ({ symbol, name }) => {
-          const q = await getQuote(symbol);
-          return {
-            name,
-            value: q.price,
-            change: q.change,
-            changePercent: q.changePercent,
-          };
+          const q = await getYahooQuote(symbol);
+          return { name, value: q.price, change: q.change, changePercent: q.changePercent };
         })
       );
       res.json(results);
@@ -164,16 +166,19 @@ export async function registerRoutes(
   app.get(api.stocks.all.path, async (req, res) => {
     try {
       const results = await Promise.all(
-        DEFAULT_STOCKS.map(async ({ symbol, company }) => {
-          const q = await getQuote(symbol);
-          return {
-            symbol,
-            company,
-            price: q.price,
-            change: q.change,
-            changePercent: q.changePercent,
-            volume: 0,
-          };
+        DEFAULT_STOCKS.map(async ({ symbol, company, sector }) => {
+          try {
+            const q = await getQuote(symbol);
+            // Retry once if price is 0
+            if (q.price === 0) {
+              await new Promise(r => setTimeout(r, 300));
+              const retry = await getQuote(symbol);
+              return { symbol, company, price: retry.price, change: retry.change, changePercent: retry.changePercent, volume: 0, sector };
+            }
+            return { symbol, company, price: q.price, change: q.change, changePercent: q.changePercent, volume: 0, sector };
+          } catch {
+            return { symbol, company, price: 0, change: 0, changePercent: 0, volume: 0, sector };
+          }
         })
       );
       res.json(results);
@@ -185,16 +190,19 @@ export async function registerRoutes(
   app.get(api.stocks.gainers.path, async (req, res) => {
     try {
       const results = await Promise.all(
-        DEFAULT_STOCKS.map(async ({ symbol, company }) => {
-          const q = await getQuote(symbol);
-          return {
-            symbol,
-            company,
-            price: q.price,
-            change: q.change,
-            changePercent: q.changePercent,
-            volume: 0,
-          };
+        DEFAULT_STOCKS.map(async ({ symbol, company, sector }) => {
+          try {
+            const q = await getQuote(symbol);
+            // Retry once if price is 0
+            if (q.price === 0) {
+              await new Promise(r => setTimeout(r, 300));
+              const retry = await getQuote(symbol);
+              return { symbol, company, price: retry.price, change: retry.change, changePercent: retry.changePercent, volume: 0, sector };
+            }
+            return { symbol, company, price: q.price, change: q.change, changePercent: q.changePercent, volume: 0, sector };
+          } catch {
+            return { symbol, company, price: 0, change: 0, changePercent: 0, volume: 0, sector };
+          }
         })
       );
       res.json(results.filter(s => s.change > 0).sort((a, b) => b.changePercent - a.changePercent));
@@ -206,16 +214,19 @@ export async function registerRoutes(
   app.get(api.stocks.losers.path, async (req, res) => {
     try {
       const results = await Promise.all(
-        DEFAULT_STOCKS.map(async ({ symbol, company }) => {
-          const q = await getQuote(symbol);
-          return {
-            symbol,
-            company,
-            price: q.price,
-            change: q.change,
-            changePercent: q.changePercent,
-            volume: 0,
-          };
+        DEFAULT_STOCKS.map(async ({ symbol, company, sector }) => {
+          try {
+            const q = await getQuote(symbol);
+            // Retry once if price is 0
+            if (q.price === 0) {
+              await new Promise(r => setTimeout(r, 300));
+              const retry = await getQuote(symbol);
+              return { symbol, company, price: retry.price, change: retry.change, changePercent: retry.changePercent, volume: 0, sector };
+            }
+            return { symbol, company, price: q.price, change: q.change, changePercent: q.changePercent, volume: 0, sector };
+          } catch {
+            return { symbol, company, price: 0, change: 0, changePercent: 0, volume: 0, sector };
+          }
         })
       );
       res.json(results.filter(s => s.change < 0).sort((a, b) => a.changePercent - b.changePercent));
@@ -227,55 +238,60 @@ export async function registerRoutes(
   app.get(api.stocks.search.path, async (req, res) => {
     const q = (req.query.q as string)?.toLowerCase();
 
-    // Combined list of all searchable stocks including indices
+    const INDEX_MAP: Record<string,string> = { "NIFTY50": "^NSEI", "SENSEX": "^BSESN" };
+
     const ALL_SEARCHABLE = [
       ...DEFAULT_STOCKS,
-      { symbol: "SPY", company: "S&P 500 ETF" },
-      { symbol: "QQQ", company: "Nasdaq 100 ETF" },
-      { symbol: "DIA", company: "Dow Jones ETF" },
+      { symbol: "SPY",     company: "S&P 500 ETF",   sector: "Index" },
+      { symbol: "QQQ",     company: "Nasdaq ETF",     sector: "Index" },
+      { symbol: "DIA",     company: "Dow Jones ETF",  sector: "Index" },
+      { symbol: "NIFTY50", company: "Nifty 50 Index", sector: "Index" },
+      { symbol: "SENSEX",  company: "BSE Sensex",     sector: "Index" },
     ];
 
-    if (!q) {
-      try {
-        const results = await Promise.all(
-          DEFAULT_STOCKS.map(async ({ symbol, company }) => {
-            const quote = await getQuote(symbol);
-            return { symbol, company, price: quote.price, change: quote.change, changePercent: quote.changePercent, volume: 0 };
-          })
-        );
-        return res.json(results);
-      } catch {
-        return res.status(500).json({ message: "Failed to fetch stocks" });
-      }
-    }
-    // filter from combined list by symbol or company name
-    const matched = ALL_SEARCHABLE.filter(
-      s =>
-        s.symbol.toLowerCase().includes(q) ||
-        s.company.toLowerCase().includes(q)
-    );
+    const sourceList = q
+      ? ALL_SEARCHABLE.filter(s =>
+          s.symbol.toLowerCase().includes(q) ||
+          s.company.toLowerCase().includes(q)
+        )
+      : DEFAULT_STOCKS;
+
     try {
       const results = await Promise.all(
-        matched.map(async ({ symbol, company }) => {
-          const quote = await getQuote(symbol);
-          return {
-            symbol,
-            company,
-            price: quote.price,
-            change: quote.change,
-            changePercent: quote.changePercent,
-            volume: 0,
-          };
+        sourceList.map(async (stock) => {
+          try {
+            const fetchSym = INDEX_MAP[stock.symbol] || stock.symbol;
+            const quote = await getYahooQuote(fetchSym);
+            return {
+              symbol: stock.symbol,
+              company: stock.company,
+              price: quote.price,
+              change: quote.change,
+              changePercent: quote.changePercent,
+              volume: 0,
+              sector: (stock as any).sector || null,
+            };
+          } catch {
+            return {
+              symbol: stock.symbol,
+              company: stock.company,
+              price: 0, change: 0, changePercent: 0, volume: 0,
+              sector: (stock as any).sector || null,
+            };
+          }
         })
       );
-      res.json(results);
-    } catch {
-      res.status(500).json({ message: "Search failed" });
+      return res.json(results);
+    } catch (err) {
+      console.error("[Search] Error:", err);
+      return res.status(500).json({ message: "Search failed" });
     }
   });
 
+
   app.get(api.stocks.history.path, async (req, res) => {
-    const symbol = ((req.query.symbol as string) || "AAPL");
+    const rawSymbol = ((req.query.symbol as string) || "AAPL");
+    const symbol = INDEX_SYMBOL_MAP[rawSymbol] || rawSymbol;
     const range = (req.query.range as string) || "1M";
     try {
       const candles = await getCandles(symbol, range);
