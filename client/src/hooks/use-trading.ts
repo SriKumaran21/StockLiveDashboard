@@ -84,6 +84,66 @@ export function useHoldings() {
   });
 }
 
+// ── SIP Hooks ────────────────────────────────────────────
+export function useSips() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['/api/sips'],
+    queryFn: async () => {
+      const res = await fetch('/api/sips', { credentials: 'include' });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!user,
+  });
+}
+
+export function useCreateSip() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { symbol: string; companyName: string; amount: number; frequency: string }) => {
+      const res = await fetch('/api/sips', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+        credentials: 'include',
+      });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.message); }
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/sips'] }),
+  });
+}
+
+export function useDeleteSip() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/sips/${id}`, { method: 'DELETE', credentials: 'include' });
+      if (!res.ok) throw new Error('Failed');
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/sips'] }),
+  });
+}
+
+export function useToggleSip() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const res = await fetch(`/api/sips/${id}/toggle`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active }),
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed');
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/sips'] }),
+  });
+}
+
 export function usePortfolio() {
   const { user } = useAuth();
   

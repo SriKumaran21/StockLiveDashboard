@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'wouter';
 import { useStockBySymbol } from '@/hooks/use-stocks';
 import { useLiveMarket } from '@/hooks/use-live-market';
-import { useBuyStock, useSellStock, useHoldings } from '@/hooks/use-trading';
+import { useBuyStock, useSellStock, useHoldings, useCreateSip, useSips, useDeleteSip, useToggleSip } from '@/hooks/use-trading';
 import { useQuery } from '@tanstack/react-query';
 import { formatCurrency, formatNumber, cn } from '@/lib/format';
 import { LivePrice } from '@/components/ui/LivePrice';
@@ -14,7 +14,7 @@ import { AddFundsDialog } from '@/components/user/AddFundsDialog';
 import { useAuth } from '@/hooks/use-auth';
 import {
   ArrowLeft, TrendingUp, TrendingDown, Plus, Minus,
-  Loader2, RefreshCw, Star, Bell, ExternalLink, Newspaper,
+  Loader2, RefreshCw, Star, Bell, ExternalLink, Newspaper, X, Pause, Play, Trash2,
 } from 'lucide-react';
 
 type Tab = 'overview' | 'news' | 'technicals';
@@ -35,6 +35,10 @@ export default function StockDetailPage() {
   const [orderType, setOrderType] = useState<'buy' | 'sell'>('buy');
   const [showDeposit, setShowDeposit] = useState(false);
   const [tab, setTab] = useState<Tab>('overview');
+  const [showSip, setShowSip] = useState(false);
+  const [sipAmount, setSipAmount] = useState('');
+  const [sipFreq, setSipFreq] = useState('monthly');
+  const [sipSuccess, setSipSuccess] = useState('');
 
   const { data: stock, isLoading: stockLoading } = useStockBySymbol(symbol || '');
   const { prices } = useLiveMarket();
@@ -42,6 +46,11 @@ export default function StockDetailPage() {
   const sellMutation = useSellStock();
   const { data: holdings } = useHoldings();
   const { user } = useAuth();
+  const { data: sips } = useSips();
+  const createSip = useCreateSip();
+  const deleteSip = useDeleteSip();
+  const toggleSip = useToggleSip();
+  const activeSip = sips?.find((s: any) => s.symbol === symbol?.toUpperCase());
 
   const { data: news, isLoading: newsLoading } = useQuery({
     queryKey: ['news', symbol],
@@ -356,19 +365,106 @@ export default function StockDetailPage() {
           </div>
 
           {/* SIP */}
-          <div className="bg-card rounded-2xl px-4 py-3 flex items-center justify-between"
-            >
-            <div className="flex items-center gap-2.5">
-              <RefreshCw style={{ width: 14, height: 14 }} className="text-primary flex-shrink-0" />
-              <div>
-                <p className="text-foreground font-semibold" style={{ fontSize: 12 }}>Create Stock SIP</p>
-                <p className="text-muted-foreground" style={{ fontSize: 11 }}>Automate your investments</p>
+          <div className="bg-card rounded-2xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <RefreshCw style={{ width: 14, height: 14 }} className="text-primary" />
+                <p className="text-foreground font-semibold" style={{ fontFamily: 'Manrope', fontSize: 13 }}>Stock SIP</p>
               </div>
+              {!showSip && (
+                <button onClick={() => setShowSip(true)}
+                  className="text-xs font-bold text-primary hover:underline">
+                  {activeSip ? 'Manage' : '+ Set up'}
+                </button>
+              )}
             </div>
-            <button onClick={() => alert('Coming soon!')}
-              className="text-primary font-semibold hover:underline" style={{ fontSize: 12 }}>
-              Set up →
-            </button>
+
+            {/* Active SIP info */}
+            {activeSip && !showSip && (
+              <div className="bg-secondary rounded-xl p-3 space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Amount</span>
+                  <span className="font-mono font-bold text-foreground">₹{Number(activeSip.amount).toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Frequency</span>
+                  <span className="font-semibold text-foreground capitalize">{activeSip.frequency}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Next run</span>
+                  <span className="font-mono text-foreground">{new Date(activeSip.nextRunAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button onClick={() => toggleSip.mutate({ id: activeSip.id, active: activeSip.active !== 'true' })}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-secondary hover:bg-border transition-colors text-xs font-semibold text-foreground">
+                    {activeSip.active === 'true' ? <><Pause style={{ width: 11, height: 11 }} /> Pause</> : <><Play style={{ width: 11, height: 11 }} /> Resume</>}
+                  </button>
+                  <button onClick={() => deleteSip.mutate(activeSip.id)}
+                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 transition-colors text-xs font-semibold text-red-500">
+                    <Trash2 style={{ width: 11, height: 11 }} /> Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* SIP setup form */}
+            {showSip && (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider">Monthly Amount (₹)</label>
+                  <div className="relative mt-1.5">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">₹</span>
+                    <input type="number" placeholder="500" value={sipAmount}
+                      onChange={e => setSipAmount(e.target.value)}
+                      className="w-full bg-secondary rounded-xl pl-7 pr-3 py-2.5 text-sm font-mono font-bold focus:outline-none focus:ring-1 focus:ring-primary transition-all text-foreground" />
+                  </div>
+                  {sipAmount && Number(sipAmount) < 100 && (
+                    <p className="text-xs text-red-500 mt-1">Minimum SIP amount is ₹100</p>
+                  )}
+                </div>
+                <div>
+                  <label className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider">Frequency</label>
+                  <div className="grid grid-cols-2 gap-2 mt-1.5">
+                    {['daily','weekly','monthly','quarterly'].map(f => (
+                      <button key={f} onClick={() => setSipFreq(f)}
+                        className={cn("py-2 rounded-xl text-xs font-bold capitalize transition-all",
+                          sipFreq === f ? "bg-primary text-black" : "bg-secondary text-muted-foreground hover:text-foreground")}>
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {sipSuccess && (
+                  <p className="text-xs text-center font-semibold py-2 rounded-lg bg-green-500/10 text-green-500">{sipSuccess}</p>
+                )}
+                <div className="flex gap-2">
+                  <button onClick={() => { setShowSip(false); setSipAmount(''); setSipSuccess(''); }}
+                    className="flex-1 py-2.5 rounded-xl bg-secondary text-muted-foreground text-xs font-bold hover:text-foreground transition-colors">
+                    Cancel
+                  </button>
+                  <button
+                    disabled={!sipAmount || Number(sipAmount) < 100 || createSip.isPending}
+                    onClick={async () => {
+                      if (!symbol || !stock) return;
+                      await createSip.mutateAsync({
+                        symbol: symbol.toUpperCase(),
+                        companyName: stock.company,
+                        amount: Number(sipAmount),
+                        frequency: sipFreq,
+                      });
+                      setSipSuccess(`SIP created! ₹${Number(sipAmount).toLocaleString('en-IN')} ${sipFreq}`);
+                      setTimeout(() => { setShowSip(false); setSipAmount(''); setSipSuccess(''); }, 1500);
+                    }}
+                    className="flex-1 py-2.5 rounded-xl bg-primary text-black text-xs font-bold disabled:opacity-40 hover:opacity-90 transition-all">
+                    {createSip.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto" /> : 'Confirm SIP'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!activeSip && !showSip && (
+              <p className="text-muted-foreground" style={{ fontSize: 11 }}>Invest a fixed amount automatically on a schedule</p>
+            )}
           </div>
         </div>
       </div>

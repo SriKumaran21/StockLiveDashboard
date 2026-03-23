@@ -87,6 +87,26 @@ export const insertHoldingSchema = createInsertSchema(holdings).omit({ id: true,
 export type InsertHolding = z.infer<typeof insertHoldingSchema>;
 export type Holding = typeof holdings.$inferSelect;
 
+// ── SIP Plans ────────────────────────────────────────────────
+export const sips = pgTable("sips", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id),
+  symbol: text("symbol").notNull(),
+  companyName: text("company_name").notNull(),
+  amount: numeric("amount").notNull(),
+  frequency: text("frequency").notNull(), // 'daily' | 'weekly' | 'monthly' | 'quarterly'
+  active: text("active").notNull().default('true'),
+  nextRunAt: timestamp("next_run_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const sipsRelations = relations(sips, ({ one }) => ({
+  user: one(users, { fields: [sips.userId], references: [users.id] }),
+}));
+
+export type Sip = typeof sips.$inferSelect;
+export type InsertSip = typeof sips.$inferInsert;
+
 // ── Price Alerts ────────────────────────────────────────────
 export const priceAlerts = pgTable("price_alerts", {
   id: uuid("id").primaryKey().defaultRandom(),

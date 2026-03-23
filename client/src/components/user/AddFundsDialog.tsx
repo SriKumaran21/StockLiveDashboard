@@ -34,6 +34,8 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
   const [cardExpiry, setCardExpiry] = useState('');
   const [cardCvv, setCardCvv] = useState('');
   const [cardName, setCardName] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
@@ -61,7 +63,76 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
     setCardCvv('');
     setCardName('');
     setSelectedBank('');
+    setErrors({});
+    setTouched({});
     onClose();
+  };
+
+  // ── Validators ───────────────────────────────────────────
+  const validateUpi = (val: string) => {
+    if (!val) return 'UPI ID is required';
+    if (!/^[a-zA-Z0-9._-]+@[a-zA-Z0-9]+$/.test(val)) return 'Enter a valid UPI ID (e.g. name@okaxis)';
+    return '';
+  };
+
+  const validateCardNumber = (val: string) => {
+    const digits = val.replace(/\s/g, '');
+    if (!digits) return 'Card number is required';
+    if (digits.length !== 16) return 'Card number must be 16 digits';
+    return '';
+  };
+
+  const validateExpiry = (val: string) => {
+    if (!val || val.length < 5) return 'Enter expiry as MM/YY';
+    const [mm, yy] = val.split('/');
+    const month = parseInt(mm, 10);
+    const year = parseInt('20' + yy, 10);
+    if (month < 1 || month > 12) return 'Invalid month';
+    const now = new Date();
+    const expDate = new Date(year, month - 1, 1);
+    if (expDate < new Date(now.getFullYear(), now.getMonth(), 1)) return 'Card has expired';
+    return '';
+  };
+
+  const validateCvv = (val: string) => {
+    if (!val) return 'CVV is required';
+    if (!/^\d{3}$/.test(val)) return 'CVV must be 3 digits';
+    return '';
+  };
+
+  const validateCardName = (val: string) => {
+    if (!val.trim()) return 'Name on card is required';
+    if (!/^[A-Z\s]+$/.test(val)) return 'Only letters allowed';
+    if (val.trim().split(/\s+/).length < 2) return 'Enter full name (first & last)';
+    return '';
+  };
+
+  const validateBank = (val: string) => {
+    if (!val) return 'Please select a bank';
+    return '';
+  };
+
+  const getDetailsErrors = () => {
+    if (method === 'upi') return { upiId: validateUpi(upiId) };
+    if (method === 'netbanking') return { selectedBank: validateBank(selectedBank) };
+    if (method === 'card') return {
+      cardNumber: validateCardNumber(cardNumber),
+      cardExpiry: validateExpiry(cardExpiry),
+      cardCvv: validateCvv(cardCvv),
+      cardName: validateCardName(cardName),
+    };
+    return {};
+  };
+
+  const isDetailsValid = () => {
+    const errs = getDetailsErrors();
+    return Object.values(errs).every(e => e === '');
+  };
+
+  const touchAll = () => {
+    if (method === 'upi') setTouched({ upiId: true });
+    else if (method === 'netbanking') setTouched({ selectedBank: true });
+    else if (method === 'card') setTouched({ cardNumber: true, cardExpiry: true, cardCvv: true, cardName: true });
   };
 
   const handleProceed = async () => {
@@ -71,11 +142,18 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
     } else if (step === 'method') {
       setStep('details');
     } else if (step === 'details') {
+      touchAll();
+      const errs = getDetailsErrors();
+      setErrors(errs);
+      if (!isDetailsValid()) return;
       setStep('processing');
-      // Simulate processing delay
       await new Promise(r => setTimeout(r, 2000));
       mutation.mutate(Number(amount));
     }
+  };
+
+  const setFieldError = (field: string, val: string, validator: (v: string) => string) => {
+    if (touched[field]) setErrors(prev => ({ ...prev, [field]: validator(val) }));
   };
 
   const formatCard = (val: string) => {
@@ -85,6 +163,19 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
   const formatExpiry = (val: string) => {
     return val.replace(/\D/g, '').replace(/^(.{2})/, '$1/').slice(0, 5);
   };
+
+  const inputClass = (field: string) =>
+    cn(
+      "w-full bg-secondary rounded-xl px-4 py-3 text-sm font-mono focus:outline-none transition-colors mt-1.5",
+      touched[field] && errors[field]
+        ? "border border-red-500 focus:border-red-500"
+        : "focus:border-primary"
+    );
+
+  const ErrorMsg = ({ field }: { field: string }) =>
+    touched[field] && errors[field]
+      ? <p className="text-xs text-red-500 mt-1">{errors[field]}</p>
+      : null;
 
   if (!isOpen) return null;
 
@@ -107,17 +198,24 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
 
         {/* Step indicator */}
         {step !== 'processing' && step !== 'success' && (
-          <div className="flex px-6 pt-4 gap-2">
-            {(['amount', 'method', 'details'] as Step[]).map((s, i) => (
-              <div key={s} className="flex items-center gap-2 flex-1">
-                <div className={cn(
-                  "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0",
-                  step === s ? "bg-primary text-black" :
-                  ['amount','method','details'].indexOf(step) > i ? "bg-green-500 text-black" : "bg-secondary text-muted-foreground"
-                )}>{i + 1}</div>
-                <div className={cn("h-px flex-1", i < 2 ? "bg-" : "hidden")} />
-              </div>
-            ))}
+          <div className="flex items-center px-6 pt-4">
+            {(['amount', 'method', 'details'] as Step[]).map((s, i) => {
+              const stepIndex = ['amount','method','details'].indexOf(step);
+              const done = stepIndex > i;
+              const active = step === s;
+              return (
+                <React.Fragment key={s}>
+                  <div className={cn(
+                    "w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0",
+                    active ? "bg-primary text-black" :
+                    done ? "bg-green-500 text-black" : "bg-secondary text-muted-foreground"
+                  )}>{i + 1}</div>
+                  {i < 2 && (
+                    <div className="flex-1 h-px mx-2" style={{ background: done ? 'rgb(34,197,94)' : 'rgba(255,255,255,0.15)' }} />
+                  )}
+                </React.Fragment>
+              );
+            })}
           </div>
         )}
 
@@ -222,14 +320,17 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
                       type="text"
                       placeholder="yourname@upi"
                       value={upiId}
-                      onChange={e => setUpiId(e.target.value)}
-                      className="w-full bg-secondary  rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors"
+                      onChange={e => { setUpiId(e.target.value); setFieldError('upiId', e.target.value, validateUpi); }}
+                      onBlur={() => { setTouched(p => ({ ...p, upiId: true })); setErrors(p => ({ ...p, upiId: validateUpi(upiId) })); }}
+                      className={cn("w-full bg-secondary rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none transition-colors",
+                        touched.upiId && errors.upiId ? "border border-red-500" : "focus:border-primary")}
                     />
                   </div>
+                  <ErrorMsg field="upiId" />
                   <div className="flex gap-2 flex-wrap">
                     {['@okaxis', '@okicici', '@ybl', '@paytm', '@upi'].map(suffix => (
-                      <button key={suffix} onClick={() => setUpiId(prev => prev.split('@')[0] + suffix)}
-                        className="text-xs px-3 py-1.5 bg-secondary rounded-lg hover:bg- transition-colors">
+                      <button key={suffix} onClick={() => { const v = upiId.split('@')[0] + suffix; setUpiId(v); setFieldError('upiId', v, validateUpi); }}
+                        className="text-xs px-3 py-1.5 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors">
                         {suffix}
                       </button>
                     ))}
@@ -238,17 +339,20 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
               )}
 
               {method === 'netbanking' && (
-                <div className="grid grid-cols-2 gap-2">
-                  {BANKS.map(bank => (
-                    <button key={bank.id} onClick={() => setSelectedBank(bank.id)}
-                      className={cn(
-                        "p-3 rounded-xl  text-left transition-all",
-                        selectedBank === bank.id ? "border-primary bg-primary/5" : " hover:border-primary/40"
-                      )}>
-                      <div className="text-lg mb-1">{bank.logo}</div>
-                      <p className="text-xs font-semibold">{bank.name}</p>
-                    </button>
-                  ))}
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    {BANKS.map(bank => (
+                      <button key={bank.id} onClick={() => { setSelectedBank(bank.id); setTouched(p => ({ ...p, selectedBank: true })); setErrors(p => ({ ...p, selectedBank: '' })); }}
+                        className={cn(
+                          "p-3 rounded-xl text-left transition-all",
+                          selectedBank === bank.id ? "border border-primary bg-primary/5" : "border border-transparent bg-secondary hover:border-primary/40"
+                        )}>
+                        <div className="text-lg mb-1">{bank.logo}</div>
+                        <p className="text-xs font-semibold">{bank.name}</p>
+                      </button>
+                    ))}
+                  </div>
+                  <ErrorMsg field="selectedBank" />
                 </div>
               )}
 
@@ -260,9 +364,11 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
                       type="text"
                       placeholder="0000 0000 0000 0000"
                       value={cardNumber}
-                      onChange={e => setCardNumber(formatCard(e.target.value))}
-                      className="w-full bg-secondary  rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-primary transition-colors mt-1.5"
+                      onChange={e => { const v = formatCard(e.target.value); setCardNumber(v); setFieldError('cardNumber', v, validateCardNumber); }}
+                      onBlur={() => { setTouched(p => ({ ...p, cardNumber: true })); setErrors(p => ({ ...p, cardNumber: validateCardNumber(cardNumber) })); }}
+                      className={inputClass('cardNumber')}
                     />
+                    <ErrorMsg field="cardNumber" />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -271,9 +377,11 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
                         type="text"
                         placeholder="MM/YY"
                         value={cardExpiry}
-                        onChange={e => setCardExpiry(formatExpiry(e.target.value))}
-                        className="w-full bg-secondary  rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-primary transition-colors mt-1.5"
+                        onChange={e => { const v = formatExpiry(e.target.value); setCardExpiry(v); setFieldError('cardExpiry', v, validateExpiry); }}
+                        onBlur={() => { setTouched(p => ({ ...p, cardExpiry: true })); setErrors(p => ({ ...p, cardExpiry: validateExpiry(cardExpiry) })); }}
+                        className={inputClass('cardExpiry')}
                       />
+                      <ErrorMsg field="cardExpiry" />
                     </div>
                     <div>
                       <label className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider">CVV</label>
@@ -281,9 +389,11 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
                         type="password"
                         placeholder="•••"
                         value={cardCvv}
-                        onChange={e => setCardCvv(e.target.value.slice(0, 3))}
-                        className="w-full bg-secondary  rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-primary transition-colors mt-1.5"
+                        onChange={e => { const v = e.target.value.slice(0, 3); setCardCvv(v); setFieldError('cardCvv', v, validateCvv); }}
+                        onBlur={() => { setTouched(p => ({ ...p, cardCvv: true })); setErrors(p => ({ ...p, cardCvv: validateCvv(cardCvv) })); }}
+                        className={inputClass('cardCvv')}
                       />
+                      <ErrorMsg field="cardCvv" />
                     </div>
                   </div>
                   <div>
@@ -292,9 +402,11 @@ export function AddFundsDialog({ isOpen, onClose, currentBalance }: Props) {
                       type="text"
                       placeholder="JOHN DOE"
                       value={cardName}
-                      onChange={e => setCardName(e.target.value.toUpperCase())}
-                      className="w-full bg-secondary  rounded-xl px-4 py-3 text-sm font-mono uppercase focus:outline-none focus:border-primary transition-colors mt-1.5"
+                      onChange={e => { const v = e.target.value.toUpperCase(); setCardName(v); setFieldError('cardName', v, validateCardName); }}
+                      onBlur={() => { setTouched(p => ({ ...p, cardName: true })); setErrors(p => ({ ...p, cardName: validateCardName(cardName) })); }}
+                      className={inputClass('cardName')}
                     />
+                    <ErrorMsg field="cardName" />
                   </div>
                 </div>
               )}

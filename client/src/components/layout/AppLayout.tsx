@@ -19,9 +19,30 @@ const NAV = [
   { label: 'Community',  path: '/community',  icon: MessageCircle },
 ];
 
+const INACTIVITY_TIMEOUT = 15 * 60 * 1000; // 15 minutes
+
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const { user, logout } = useAuth();
+
+  // ── Inactivity auto-logout ───────────────────────────────
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    const reset = () => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        await logout();
+        navigate('/auth');
+      }, INACTIVITY_TIMEOUT);
+    };
+    const EVENTS = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+    EVENTS.forEach(e => window.addEventListener(e, reset, { passive: true }));
+    reset();
+    return () => {
+      clearTimeout(timer);
+      EVENTS.forEach(e => window.removeEventListener(e, reset));
+    };
+  }, [logout, navigate]);
   const [expanded, setExpanded] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [addFundsOpen, setAddFundsOpen] = useState(false);
@@ -69,10 +90,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   );
 
   const UserBlock = ({ show }: { show: boolean }) => user ? (
-    <div className="m-2 p-3 rounded-xl bg-secondary" style={{ flexShrink: 0 }}>
+    <div className="m-2 p-2 rounded-xl bg-secondary" style={{ flexShrink: 0, overflow: "hidden" }}>
       <div className="flex items-center gap-2.5 overflow-hidden">
-        <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center
-                        text-primary font-bold text-sm flex-shrink-0"
+        <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center
+                        text-primary font-bold text-xs flex-shrink-0"
           style={{ fontFamily: 'Manrope' }}>
           {user.name.charAt(0).toUpperCase()}
         </div>
@@ -121,8 +142,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           borderRight: '1px solid hsl(var(--))',
           overflow: 'hidden',
         }}>
-        {/* Logo */}
-        <div className="flex items-center px-3 flex-shrink-0"
+        {/* Logo - CLICKABLE LINK TO DASHBOARD */}
+        <Link href="/"
+          className="flex items-center px-3 flex-shrink-0 hover:opacity-80 transition-opacity"
           style={{ height: 56, borderBottom: '1px solid hsl(var(--))' }}>
           <div className="flex items-center gap-2.5 overflow-hidden">
             <div className="w-7 h-7 rounded-xl bg-primary flex items-center justify-center flex-shrink-0">
@@ -138,7 +160,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               StockLive
             </span>
           </div>
-        </div>
+        </Link>
 
         {/* Nav */}
         <nav className="flex-1 py-2 overflow-hidden">
@@ -155,12 +177,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           style={{ width: 240, borderRight: '1px solid hsl(var(--))' }}>
           <div className="flex items-center justify-between px-4 flex-shrink-0"
             style={{ height: 56, borderBottom: '1px solid hsl(var(--))' }}>
-            <div className="flex items-center gap-2">
+            <Link href="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <div className="w-7 h-7 rounded-xl bg-primary flex items-center justify-center">
                 <TrendingUp className="text-primary-foreground" style={{ width: 13, height: 13 }} />
               </div>
               <span className="text-foreground font-bold" style={{ fontFamily: 'Manrope', fontSize: 14 }}>StockLive</span>
-            </div>
+            </Link>
             <button onClick={() => setMobileOpen(false)} className="text-muted-foreground hover:text-foreground">
               <X style={{ width: 18, height: 18 }} />
             </button>

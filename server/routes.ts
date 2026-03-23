@@ -32,6 +32,17 @@ function pushToCache(symbol: string, price: number) {
   if (arr.length > 500) arr.shift(); // keep last 500 points
 }
 
+function calcNextRun(frequency: string): Date {
+  const now = new Date();
+  switch (frequency) {
+    case 'daily':     return new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    case 'weekly':    return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    case 'monthly':   return new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    case 'quarterly': return new Date(now.getFullYear(), now.getMonth() + 3, now.getDate());
+    default:          return new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  }
+}
+
 async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
@@ -557,6 +568,69 @@ export async function registerRoutes(
   }, 15000);
 
 
+
+  // ── SIP Routes ───────────────────────────────────────────
+  app.get('/api/sips', async (req, res) => {
+    if (!req.session.userId) return res.status(401).json({ message: 'Not authenticated' });
+    const list = await storage.getSips(req.session.userId);
+    res.json(list);
+  });
+
+  app.post('/api/sips', async (req, res) => {
+    if (!req.session.userId) return res.status(401).json({ message: 'Not authenticated' });
+    try {
+      const { symbol, companyName, amount, frequency } = req.body;
+      if (!symbol || !amount || !frequency) return res.status(400).json({ message: 'Missing fields' });
+      const nextRunAt = calcNextRun(frequency);
+      const sip = await storage.createSip({ userId: req.session.userId, symbol, companyName, amount: Number(amount), frequency, nextRunAt });
+      res.status(201).json(sip);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || 'Failed to create SIP' });
+    }
+  });
+
+  app.delete('/api/sips/:id', async (req, res) => {
+    if (!req.session.userId) return res.status(401).json({ message: 'Not authenticated' });
+    await storage.deleteSip(req.params.id, req.session.userId);
+    res.json({ success: true });
+  });
+
+  app.patch('/api/sips/:id/toggle', async (req, res) => {
+    if (!req.session.userId) return res.status(401).json({ message: 'Not authenticated' });
+    const { active } = req.body;
+    const sip = await storage.toggleSip(req.params.id, req.session.userId, active);
+    res.json(sip);
+  });
+
+  // ── SIP Cron — runs every minute, executes due SIPs ──────
+  setInterval(async () => {
+    try {
+      const dueSips = await storage.getDueSips();
+      for (const sip of dueSips) {
+        try {
+          const stock = DEFAULT_STOCKS.find(s => s.symbol === sip.symbol);
+          if (!stock) continue;
+          const q = await getQuote(sip.symbol);
+          if (!q.price) continue;
+          const quantity = Math.floor(Number(sip.amount) / q.price);
+          if (quantity < 1) continue;
+          await storage.buyStock(sip.userId, {
+            symbol: sip.symbol,
+            companyName: sip.companyName,
+            quantity: quantity.toString(),
+            price: q.price,
+            totalCost: quantity * q.price,
+          });
+          await storage.updateSipNextRun(sip.id, calcNextRun(sip.frequency));
+          console.log(`[SIP] Executed ${sip.symbol} for user ${sip.userId} — ${quantity} shares @ ₹${q.price}`);
+        } catch (e) {
+          console.error(`[SIP] Failed for ${sip.id}:`, e);
+        }
+      }
+    } catch (e) {
+      console.error('[SIP] Cron error:', e);
+    }
+  }, 60 * 1000);
 
   // ── AI Assistant ─────────────────────────────────────────
   app.post('/api/ai/analyze', async (req, res) => {

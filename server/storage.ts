@@ -1,13 +1,20 @@
 import { db } from "./db";
 import {
-  users, watchlists, transactions, holdings, chatMessages,
+  users, watchlists, transactions, holdings, chatMessages, sips,
   type User, type InsertUser, type Watchlist, type InsertWatchlist,
   type Transaction, type InsertTransaction, type Holding, type InsertHolding,
-  type ChatMessage
+  type ChatMessage, type Sip
 } from "@shared/schema";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, lte } from "drizzle-orm";
 
 export interface IStorage {
+  getSips(userId: string): Promise<Sip[]>;
+  createSip(data: { userId: string; symbol: string; companyName: string; amount: number; frequency: string; nextRunAt: Date }): Promise<Sip>;
+  deleteSip(id: string, userId: string): Promise<void>;
+  toggleSip(id: string, userId: string, active: boolean): Promise<Sip>;
+  getDueSips(): Promise<Sip[]>;
+  updateSipNextRun(id: string, nextRunAt: Date): Promise<void>;
+
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
@@ -184,6 +191,45 @@ export class DatabaseStorage implements IStorage {
     });
 
     return { success: true, holding: updatedHolding, transaction: updatedUser };
+  }
+
+  // ── SIP Plans ─────────────────────────────────────────────
+  async getSips(userId: string): Promise<Sip[]> {
+    return await db.select().from(sips).where(eq(sips.userId, userId)).orderBy(asc(sips.createdAt));
+  }
+
+  async createSip(data: { userId: string; symbol: string; companyName: string; amount: number; frequency: string; nextRunAt: Date }): Promise<Sip> {
+    const [sip] = await db.insert(sips).values({
+      userId: data.userId,
+      symbol: data.symbol,
+      companyName: data.companyName,
+      amount: data.amount.toString(),
+      frequency: data.frequency,
+      active: 'true',
+      nextRunAt: data.nextRunAt,
+    }).returning();
+    return sip;
+  }
+
+  async deleteSip(id: string, userId: string): Promise<void> {
+    await db.delete(sips).where(and(eq(sips.id, id), eq(sips.userId, userId)));
+  }
+
+  async toggleSip(id: string, userId: string, active: boolean): Promise<Sip> {
+    const [sip] = await db.update(sips)
+      .set({ active: active ? 'true' : 'false' })
+      .where(and(eq(sips.id, id), eq(sips.userId, userId)))
+      .returning();
+    return sip;
+  }
+
+  async getDueSips(): Promise<Sip[]> {
+    return await db.select().from(sips)
+      .where(and(eq(sips.active, 'true'), lte(sips.nextRunAt, new Date())));
+  }
+
+  async updateSipNextRun(id: string, nextRunAt: Date): Promise<void> {
+    await db.update(sips).set({ nextRunAt }).where(eq(sips.id, id));
   }
 
   // ── Community Chat ───────────────────────────────────────
