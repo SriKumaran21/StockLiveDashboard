@@ -528,8 +528,9 @@ export async function registerRoutes(
     if (wss.clients.size === 0) return; // skip if no clients connected
 
     try {
-      // Push stock prices
+      // Push stock prices — staggered to avoid rate limiting
       for (const { symbol } of DEFAULT_STOCKS) {
+        await new Promise(r => setTimeout(r, 100)); // 100ms between each
         const q = await getQuote(symbol);
         pushToCache(symbol, q.price);
         const payload = JSON.stringify({
@@ -695,15 +696,46 @@ Be direct. No disclaimers. No financial advice warnings. Just analysis.`;
     }
   });
 
-  // AI Chat
+  // AI Chat — multi-turn with portfolio awareness
   app.post('/api/ai/chat', async (req, res) => {
     try {
-      const { message, context } = req.body;
+      const { message, history = [], context } = req.body;
 
-      const systemContext = `You are a stock market AI assistant embedded in StockLive, a trading platform.
-You have access to live market data. Be concise, analytical, and helpful.
-Current market context: ${JSON.stringify(context || {})}
-Keep responses under 100 words. Be direct and insightful.`;
+      const ctx = context || {};
+      const portfolio = ctx.portfolio || {};
+      const market    = ctx.marketSummary || {};
+
+      const systemPrompt = `You are an intelligent stock market AI assistant embedded in StockLive, a trading platform.
+You have full access to the user's live portfolio and market data. Be concise, sharp, and genuinely helpful.
+
+USER: ${ctx.user || 'Investor'}
+BALANCE: ₹${ctx.balance || 0}
+
+PORTFOLIO SUMMARY:
+- Total Value: ₹${portfolio.totalValue?.toFixed(2) || 0}
+- Total Invested: ₹${portfolio.totalCost?.toFixed(2) || 0}
+- Total Returns: ₹${portfolio.totalReturns?.toFixed(2) || 0} (${portfolio.returnsPercent?.toFixed(2) || 0}%)
+- Holdings: ${JSON.stringify(portfolio.holdings || [])}
+
+MARKET SUMMARY:
+- ${market.gainers || 0} stocks up, ${market.losers || 0} stocks down today
+- Top Gainers: ${JSON.stringify(market.topGainers || [])}
+- Top Losers: ${JSON.stringify(market.topLosers || [])}
+- Indices: ${JSON.stringify(ctx.indices || [])}
+
+RULES:
+- Use the portfolio data to give personalized answers
+- Keep responses under 150 words unless the user asks for detail
+- Be direct, use numbers and percentages when relevant
+- Never give generic advice — always refer to actual data above
+- Format nicely with line breaks when listing multiple items`;
+
+      // Build full conversation: system + history + new message
+      const chatMessages = [
+        { role: 'system', content: systemPrompt },
+        ...history.slice(-8), // last 8 turns for context
+        { role: 'user', content: message },
+      ];
 
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
@@ -713,20 +745,17 @@ Keep responses under 100 words. Be direct and insightful.`;
         },
         body: JSON.stringify({
           model: 'llama-3.3-70b-versatile',
-          messages: [
-            { role: 'system', content: systemContext },
-            { role: 'user', content: message },
-          ],
-          max_tokens: 400,
+          messages: chatMessages,
+          max_tokens: 500,
           temperature: 0.7,
         }),
       });
 
       const data = await response.json() as any;
-      console.log('[GROQ RAW]:', JSON.stringify(data).slice(0,500));
       const text = data?.choices?.[0]?.message?.content || 'I could not process that request.';
       res.json({ reply: text });
     } catch (err) {
+      console.error('[AI Chat]:', err);
       res.status(500).json({ message: 'Chat failed' });
     }
   });

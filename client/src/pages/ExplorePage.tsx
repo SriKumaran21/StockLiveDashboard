@@ -4,7 +4,7 @@ import { useWatchlist, useAddWatchlist, useRemoveWatchlist } from '@/hooks/use-w
 import { useLiveMarket } from '@/hooks/use-live-market';
 import { formatCurrency, cn } from '@/lib/format';
 import { useLocation } from 'wouter';
-import { Search, Star, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
+import { Search, Star, TrendingUp, TrendingDown, ArrowRight, SlidersHorizontal, ChevronDown, X } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 
 const SECTORS = ['All Sectors','Banking','Finance','IT','Tech','Energy','Auto','Consumer','Pharma','Telecom','Industrial'];
@@ -35,10 +35,15 @@ function MiniSparkline({ symbol }: { symbol: string }) {
 }
 
 export function ExplorePage() {
-  const [query,   setQuery]   = useState('');
-  const [sector,  setSector]  = useState('All Sectors');
-  const [market,  setMarket]  = useState('All');
-  const [hovered, setHovered] = useState<string|null>(null);
+  const [query,      setQuery]      = useState('');
+  const [sector,     setSector]     = useState('All Sectors');
+  const [market,     setMarket]     = useState('All');
+  const [hovered,    setHovered]    = useState<string|null>(null);
+  const [showFilter, setShowFilter] = useState(false);
+  const [sortBy,     setSortBy]     = useState<'default'|'price_asc'|'price_desc'|'change_asc'|'change_desc'|'name'>('default');
+  const [minPrice,   setMinPrice]   = useState('');
+  const [maxPrice,   setMaxPrice]   = useState('');
+  const [changeFilter, setChangeFilter] = useState<'all'|'gainers'|'losers'>('all');
 
   const { data: allStocks, isLoading } = useAllStocks();
   const { data: watchlist } = useWatchlist();
@@ -50,15 +55,33 @@ export function ExplorePage() {
   const watchlistSymbols = new Set(watchlist?.map(w => w.symbol) || []);
 
   const filtered = useMemo(() => {
-    return (allStocks || []).filter(s => {
+    let result = (allStocks || []).filter(s => {
+      const live = prices[s.symbol];
+      const price = live?.price ?? s.price;
+      const pct   = live?.changePercent ?? s.changePercent;
       const matchQuery  = !query || s.symbol.toLowerCase().includes(query.toLowerCase()) || s.company.toLowerCase().includes(query.toLowerCase());
       const matchSector = sector === 'All Sectors' || (s as any).sector === sector;
       const matchMarket = market === 'All'
         || (market === 'Indian' && (s.symbol.endsWith('.NS') || s.symbol.endsWith('.BO')))
         || (market === 'US'     && !s.symbol.endsWith('.NS') && !s.symbol.endsWith('.BO'));
-      return matchQuery && matchSector && matchMarket;
+      const matchMin    = !minPrice || price >= Number(minPrice);
+      const matchMax    = !maxPrice || price <= Number(maxPrice);
+      const matchChange = changeFilter === 'all' || (changeFilter === 'gainers' ? pct > 0 : pct < 0);
+      return matchQuery && matchSector && matchMarket && matchMin && matchMax && matchChange;
     });
-  }, [allStocks, query, sector, market]);
+    if (sortBy === 'price_asc')   result = [...result].sort((a,b) => (prices[a.symbol]?.price ?? a.price) - (prices[b.symbol]?.price ?? b.price));
+    if (sortBy === 'price_desc')  result = [...result].sort((a,b) => (prices[b.symbol]?.price ?? b.price) - (prices[a.symbol]?.price ?? a.price));
+    if (sortBy === 'change_asc')  result = [...result].sort((a,b) => (prices[a.symbol]?.changePercent ?? a.changePercent) - (prices[b.symbol]?.changePercent ?? b.changePercent));
+    if (sortBy === 'change_desc') result = [...result].sort((a,b) => (prices[b.symbol]?.changePercent ?? b.changePercent) - (prices[a.symbol]?.changePercent ?? a.changePercent));
+    if (sortBy === 'name')        result = [...result].sort((a,b) => a.company.localeCompare(b.company));
+    return result;
+  }, [allStocks, query, sector, market, minPrice, maxPrice, changeFilter, sortBy, prices]);
+
+  const activeFilterCount = [
+    minPrice, maxPrice,
+    changeFilter !== 'all' ? changeFilter : '',
+    sortBy !== 'default' ? sortBy : '',
+  ].filter(Boolean).length;
 
   const toggleWatchlist = (e: React.MouseEvent, symbol: string, company: string) => {
     e.stopPropagation();
@@ -87,8 +110,8 @@ export function ExplorePage() {
         />
       </div>
 
-      {/* Market + Sector filters */}
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+      {/* Market + Sector + Filter row */}
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
         {/* Market tabs */}
         <div style={{ display: 'flex', background: '#161C27', borderRadius: 10, padding: 3, gap: 2 }}>
           {MARKETS.map(m => (
@@ -105,7 +128,7 @@ export function ExplorePage() {
         </div>
 
         {/* Sector pills */}
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flex: 1 }}>
           {SECTORS.map(s => (
             <button key={s} onClick={() => setSector(s)}
               style={{
@@ -118,11 +141,126 @@ export function ExplorePage() {
             </button>
           ))}
         </div>
+
+        {/* Filter button */}
+        <button onClick={() => setShowFilter(v => !v)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '7px 14px', borderRadius: 10, fontSize: 12, fontWeight: 600,
+            border: 'none', cursor: 'pointer', fontFamily: 'Inter', transition: 'all 150ms',
+            background: showFilter || activeFilterCount > 0 ? 'rgba(59,130,246,0.15)' : '#161C27',
+            color: showFilter || activeFilterCount > 0 ? '#3B82F6' : '#9CA3AF',
+            flexShrink: 0,
+          }}>
+          <SlidersHorizontal style={{ width: 13, height: 13 }} />
+          Filters
+          {activeFilterCount > 0 && (
+            <span style={{
+              width: 18, height: 18, borderRadius: '50%', background: '#3B82F6',
+              color: 'white', fontSize: 10, fontWeight: 700,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>{activeFilterCount}</span>
+          )}
+        </button>
       </div>
+
+      {/* Filter panel */}
+      {showFilter && (
+        <div style={{
+          background: '#161C27', borderRadius: 14, padding: 16,
+          border: '1px solid rgba(255,255,255,0.06)',
+          display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start',
+        }}>
+          {/* Price range */}
+          <div>
+            <p style={{ fontSize: 10, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Price Range (₹)</p>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input type="number" placeholder="Min" value={minPrice} onChange={e => setMinPrice(e.target.value)}
+                style={{
+                  width: 90, background: '#1E2738', border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 8, padding: '6px 10px', fontSize: 12, color: '#E5E7EB',
+                  fontFamily: 'JetBrains Mono', outline: 'none',
+                }} />
+              <span style={{ color: '#6B7280', fontSize: 12 }}>—</span>
+              <input type="number" placeholder="Max" value={maxPrice} onChange={e => setMaxPrice(e.target.value)}
+                style={{
+                  width: 90, background: '#1E2738', border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 8, padding: '6px 10px', fontSize: 12, color: '#E5E7EB',
+                  fontFamily: 'JetBrains Mono', outline: 'none',
+                }} />
+            </div>
+          </div>
+
+          {/* % Change filter */}
+          <div>
+            <p style={{ fontSize: 10, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>% Change</p>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {[
+                { val: 'all', label: 'All' },
+                { val: 'gainers', label: '▲ Gainers' },
+                { val: 'losers',  label: '▼ Losers' },
+              ].map(({ val, label }) => (
+                <button key={val} onClick={() => setChangeFilter(val as any)}
+                  style={{
+                    padding: '5px 12px', borderRadius: 8, fontSize: 11, fontWeight: 600,
+                    border: 'none', cursor: 'pointer', transition: 'all 150ms',
+                    background: changeFilter === val
+                      ? val === 'gainers' ? 'rgba(34,197,94,0.15)' : val === 'losers' ? 'rgba(239,68,68,0.15)' : 'rgba(59,130,246,0.15)'
+                      : 'rgba(255,255,255,0.04)',
+                    color: changeFilter === val
+                      ? val === 'gainers' ? '#22C55E' : val === 'losers' ? '#EF4444' : '#3B82F6'
+                      : '#9CA3AF',
+                  }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Sort by */}
+          <div>
+            <p style={{ fontSize: 10, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Sort By</p>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {[
+                { val: 'default',     label: 'Default' },
+                { val: 'price_desc',  label: 'Price ↓' },
+                { val: 'price_asc',   label: 'Price ↑' },
+                { val: 'change_desc', label: 'Change ↓' },
+                { val: 'change_asc',  label: 'Change ↑' },
+                { val: 'name',        label: 'Name A-Z' },
+              ].map(({ val, label }) => (
+                <button key={val} onClick={() => setSortBy(val as any)}
+                  style={{
+                    padding: '5px 12px', borderRadius: 8, fontSize: 11, fontWeight: 600,
+                    border: 'none', cursor: 'pointer', transition: 'all 150ms',
+                    background: sortBy === val ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.04)',
+                    color: sortBy === val ? '#3B82F6' : '#9CA3AF',
+                  }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Clear */}
+          {activeFilterCount > 0 && (
+            <button onClick={() => { setMinPrice(''); setMaxPrice(''); setChangeFilter('all'); setSortBy('default'); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 5, marginLeft: 'auto',
+                padding: '6px 12px', borderRadius: 8, fontSize: 11, fontWeight: 600,
+                background: 'rgba(239,68,68,0.1)', color: '#EF4444',
+                border: 'none', cursor: 'pointer',
+              }}>
+              <X style={{ width: 11, height: 11 }} /> Clear all
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Results count */}
       <p style={{ fontSize: 11, color: '#6B7280', fontWeight: 500 }}>
         Showing <strong style={{ color: '#E5E7EB' }}>{filtered.length}</strong> stocks
+        {activeFilterCount > 0 && <span style={{ color: '#3B82F6' }}> (filtered)</span>}
       </p>
 
       {/* Stock list */}

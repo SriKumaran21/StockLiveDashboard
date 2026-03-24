@@ -22,6 +22,8 @@ function get<T>(path: string): Promise<T> {
   });
 }
 
+const lastGoodQuote = new Map<string, { price: number; change: number; changePercent: number }>();
+
 export async function getQuote(symbol: string) {
   if (symbol.endsWith(".NS") || symbol.endsWith(".BO")) return getYahooQuote(symbol);
   const data = await get<any>(`/quote?symbol=${symbol}`);
@@ -31,6 +33,9 @@ export async function getQuote(symbol: string) {
     high: data.h ?? 0, low: data.l ?? 0, open: data.o ?? 0,
   };
 }
+
+// Never-zero price cache
+const lastGoodPrice = new Map<string, { price: number; change: number; changePercent: number }>();
 
 export async function getYahooQuote(symbol: string) {
   return new Promise<{ symbol: string; price: number; change: number; changePercent: number; high: number; low: number; open: number }>((resolve, reject) => {
