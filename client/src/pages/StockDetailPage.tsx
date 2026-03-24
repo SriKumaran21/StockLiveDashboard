@@ -123,7 +123,7 @@ export default function StockDetailPage() {
         <StockIcon symbol={stock.symbol} size={36} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 style={{ fontFamily: 'Manrope', fontWeight: 800, fontSize: 22 }} className="text-foreground">
+            <h1 style={{ fontFamily: 'Manrope', fontWeight: 800, fontSize: 20 }} className="text-foreground">
               {stock.symbol.replace('.NS','').replace('.BO','')}
             </h1>
             <span className={cn(
@@ -135,6 +135,9 @@ export default function StockDetailPage() {
             </span>
           </div>
           <p className="text-muted-foreground" style={{ fontSize: 12 }}>{stock.company}</p>
+          <p style={{ fontFamily: 'JetBrains Mono', fontSize: 16, fontWeight: 700, marginTop: 2 }} className="text-foreground sm:hidden">
+            {formatCurrency(currentPrice)}
+          </p>
         </div>
         <div className="text-right hidden sm:block">
           <p style={{ fontFamily: 'JetBrains Mono', fontSize: 22, fontWeight: 700 }} className="text-foreground">
@@ -148,7 +151,7 @@ export default function StockDetailPage() {
       </div>
 
       {/* ── Key Metrics Strip ── */}
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         {[
           { label: 'Open',    value: formatCurrency(stock.price) },
           { label: 'Day High', value: dayHigh ? formatCurrency(dayHigh) : '—' },
@@ -166,9 +169,9 @@ export default function StockDetailPage() {
       </div>
 
       {/* ── Main grid ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
         {/* Left — Chart + Tabs */}
-        <div className="xl:col-span-2 space-y-0 bg-card rounded-2xl overflow-hidden"
+        <div className="lg:col-span-2 space-y-0 bg-card rounded-2xl overflow-hidden"
           >
           {/* Tabs */}
           <div className="flex items-center gap-1 px-4 pt-4 pb-0"
@@ -437,9 +440,9 @@ export default function StockDetailPage() {
                 {sipSuccess && (
                   <p className="text-xs text-center font-semibold py-2 rounded-lg bg-green-500/10 text-green-500">{sipSuccess}</p>
                 )}
-                <div className="flex gap-2">
+                <div className="flex gap-2 pt-1">
                   <button onClick={() => { setShowSip(false); setSipAmount(''); setSipSuccess(''); }}
-                    className="flex-1 py-2.5 rounded-xl bg-secondary text-muted-foreground text-xs font-bold hover:text-foreground transition-colors">
+                    className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all bg-secondary text-muted-foreground hover:text-foreground active:scale-95">
                     Cancel
                   </button>
                   <button
@@ -455,8 +458,8 @@ export default function StockDetailPage() {
                       setSipSuccess(`SIP created! ₹${Number(sipAmount).toLocaleString('en-IN')} ${sipFreq}`);
                       setTimeout(() => { setShowSip(false); setSipAmount(''); setSipSuccess(''); }, 1500);
                     }}
-                    className="flex-1 py-2.5 rounded-xl bg-primary text-black text-xs font-bold disabled:opacity-40 hover:opacity-90 transition-all">
-                    {createSip.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto" /> : 'Confirm SIP'}
+                    className="flex-1 py-3 rounded-xl text-sm font-bold transition-all bg-primary text-black hover:opacity-90 active:scale-95 disabled:opacity-40">
+                    {createSip.isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Confirm SIP'}
                   </button>
                 </div>
               </div>

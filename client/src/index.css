@@ -160,3 +160,74 @@
 .dark .bg-background { background-color: #0D1117 !important; }
 .dark .bg-card { background-color: #161C27 !important; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
 .dark .bg-secondary { background-color: #1E2738 !important; }
+/* ── Mobile Responsive Grids ─────────────────────────────── */
+.dashboard-top-grid {
+  display: grid;
+  grid-template-columns: 8fr 4fr;
+  gap: 16px;
+}
+.index-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.dashboard-chart-grid {
+  display: grid;
+  grid-template-columns: 8fr 4fr;
+  gap: 16px;
+  align-items: stretch;
+}
+.dashboard-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-top-grid {
+    grid-template-columns: 1fr;
+  }
+  .index-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .dashboard-chart-grid {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .index-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ── Portfolio responsive ────────────────────────────────── */
+.portfolio-hero-grid {
+  display: grid;
+  grid-template-columns: 60fr 40fr;
+  gap: 16px;
+  align-items: stretch;
+}
+.portfolio-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 768px) {
+  .portfolio-hero-grid {
+    grid-template-columns: 1fr;
+  }
+  .portfolio-stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .portfolio-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}

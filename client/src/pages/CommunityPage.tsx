@@ -66,7 +66,7 @@ export function CommunityPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col animate-slide-up">
+    <div className="flex flex-col animate-slide-up" style={{ height: "calc(100dvh - 120px)", minHeight: 400 }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>

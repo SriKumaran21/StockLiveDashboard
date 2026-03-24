@@ -103,7 +103,7 @@ export function PortfolioPage() {
     <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 40 }}>
 
       {/* ── ROW 1: Hero (60%) + Allocation Pie (40%) ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '60fr 40fr', gap: 16, alignItems: 'stretch' }}>
+      <div className="portfolio-hero-grid">
 
         {/* LEFT — Portfolio value hero */}
         <div style={{
@@ -197,7 +197,7 @@ export function PortfolioPage() {
       </div>
 
       {/* ── ROW 2: 3 stat cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
+      <div className="portfolio-stats-grid">
         {[
           { label: 'Invested',      value: formatCurrency(totalCost),                                       accent: '#3B82F6' },
           { label: 'Current Value', value: formatCurrency(totalValue),                                      accent: '#3B82F6' },
@@ -250,20 +250,7 @@ export function PortfolioPage() {
           </div>
         </div>
 
-        {/* Column headers */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '2fr 80px 1fr 1fr 80px 100px 100px',
-          padding: '8px 20px', gap: 8,
-        }}>
-          {['Stock','Shares','Avg Cost','Live Price','Chart','Value','Returns'].map(h => (
-            <p key={h} style={{ fontSize: 10, fontWeight: 600, color: '#4B5563', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              {h}
-            </p>
-          ))}
-        </div>
-
-        {/* Rows */}
+        {/* Rows — card layout works on all screen sizes */}
         {sorted.length === 0 ? (
           <div style={{ padding: '48px', textAlign: 'center' }}>
             <BarChart2 style={{ width: 32, height: 32, color: '#374151', margin: '0 auto 12px' }} />
@@ -279,59 +266,57 @@ export function PortfolioPage() {
             <div key={h.id}
               onClick={() => navigate(`/stock/${h.symbol}`)}
               style={{
-                display: 'grid',
-                gridTemplateColumns: '2fr 80px 1fr 1fr 80px 100px 100px',
-                padding: '13px 20px', gap: 8, cursor: 'pointer', alignItems: 'center',
+                padding: '14px 16px', cursor: 'pointer',
                 borderBottom: i < sorted.length-1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
                 transition: 'background 150ms',
               }}
               onMouseEnter={e => (e.currentTarget.style.background = '#1E2738')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
 
-              {/* Stock */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {/* Row 1: icon + name + returns badge */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                 <div style={{
-                  width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                  width: 36, height: 36, borderRadius: 10, flexShrink: 0,
                   background: `hsl(${h.symbol.charCodeAt(0) * 15 % 360},35%,22%)`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 10, fontWeight: 800, color: '#E5E7EB', fontFamily: 'Manrope',
+                  fontSize: 11, fontWeight: 800, color: '#E5E7EB', fontFamily: 'Manrope',
                 }}>
                   {h.symbol.replace('.NS','').replace('.BO','').slice(0,2)}
                 </div>
-                <div>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ fontSize: 13, fontWeight: 700, fontFamily: 'Manrope', color: '#E5E7EB' }}>
                     {h.symbol.replace('.NS','').replace('.BO','')}
                   </p>
-                  <p style={{ fontSize: 11, color: '#6B7280' }}>{h.companyName}</p>
+                  <p style={{ fontSize: 11, color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.companyName}</p>
+                </div>
+                <div style={{
+                  padding: '5px 10px', borderRadius: 8, textAlign: 'right', flexShrink: 0,
+                  background: isHUp ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
+                }}>
+                  <p style={{ fontSize: 12, fontFamily: 'JetBrains Mono', fontWeight: 700, color: isHUp ? '#22C55E' : '#EF4444' }}>
+                    {isHUp?'+':''}{h.retPct.toFixed(2)}%
+                  </p>
+                  <p style={{ fontSize: 10, color: isHUp ? '#22C55E' : '#EF4444', fontFamily: 'JetBrains Mono' }}>
+                    {isHUp?'+':''}{formatCurrency(Math.abs(h.ret))}
+                  </p>
                 </div>
               </div>
 
-              {/* Shares */}
-              <p style={{ fontSize: 12, fontFamily: 'JetBrains Mono', fontWeight: 600, color: '#9CA3AF' }}>{h.quantity}</p>
-
-              {/* Avg cost */}
-              <p style={{ fontSize: 12, fontFamily: 'JetBrains Mono', color: '#9CA3AF' }}>{formatCurrency(Number(h.averagePrice))}</p>
-
-              {/* Live price */}
-              <p style={{ fontSize: 13, fontFamily: 'JetBrains Mono', fontWeight: 700, color: '#E5E7EB' }}>{formatCurrency(h.livePrice)}</p>
-
-              {/* Sparkline */}
-              <MiniSparkline symbol={h.symbol} />
-
-              {/* Value */}
-              <p style={{ fontSize: 12, fontFamily: 'JetBrains Mono', fontWeight: 600, color: '#E5E7EB' }}>{formatCurrency(h.liveValue)}</p>
-
-              {/* Returns */}
-              <div style={{
-                padding: '5px 8px', borderRadius: 8,
-                background: isHUp ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
-              }}>
-                <p style={{ fontSize: 11, fontFamily: 'JetBrains Mono', fontWeight: 700, color: isHUp ? '#22C55E' : '#EF4444' }}>
-                  {isHUp?'+':''}{formatCurrency(Math.abs(h.ret))}
-                </p>
-                <p style={{ fontSize: 10, color: isHUp ? '#22C55E' : '#EF4444', fontFamily: 'JetBrains Mono' }}>
-                  {isHUp?'▲':'▼'} {Math.abs(h.retPct).toFixed(2)}%
-                </p>
+              {/* Row 2: stats + sparkline */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 4 }}>
+                  {[
+                    { label: 'Shares', value: String(h.quantity) },
+                    { label: 'Avg Cost', value: formatCurrency(Number(h.averagePrice)) },
+                    { label: 'Live', value: formatCurrency(h.livePrice) },
+                  ].map(({ label, value }) => (
+                    <div key={label} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '5px 8px' }}>
+                      <p style={{ fontSize: 9, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>{label}</p>
+                      <p style={{ fontSize: 11, fontFamily: 'JetBrains Mono', fontWeight: 600, color: '#E5E7EB' }}>{value}</p>
+                    </div>
+                  ))}
+                </div>
+                <MiniSparkline symbol={h.symbol} />
               </div>
             </div>
           );

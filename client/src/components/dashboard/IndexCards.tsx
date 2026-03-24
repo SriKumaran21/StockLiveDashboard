@@ -26,7 +26,7 @@ export function IndexCards() {
     return (
       <>
         {[1,2,3,4].map(i => (
-          <div key={i} className="skeleton rounded-2xl" style={{ height: 110 }} />
+          <div key={i} className="skeleton rounded-2xl" style={{ height: 90 }} />
         ))}
       </>
     );
@@ -41,7 +41,7 @@ export function IndexCards() {
             onClick={() => navigate(`/stock/${INDEX_TO_SYMBOL[index.name] || index.name}`)}
             className="rounded-2xl cursor-pointer transition-all duration-200 hover:scale-[1.02]"
             style={{
-              height: 110,
+              height: 'auto', minHeight: 90,
               background: isUp
                 ? 'linear-gradient(135deg, #121821 60%, rgba(34,197,94,0.08) 100%)'
                 : 'linear-gradient(135deg, #121821 60%, rgba(239,68,68,0.08) 100%)',

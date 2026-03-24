@@ -64,7 +64,7 @@ export function MarketHeatmap() {
         </div>
 
         {/* Sector filter */}
-        <div className="flex gap-1.5 flex-wrap">
+        <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar" style={{ WebkitOverflowScrolling: 'touch' }}>
           <button onClick={() => setFilter('all')}
             className={cn("px-2.5 py-1 rounded-lg text-xs font-semibold transition-all",
               filter === 'all' ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground")}>

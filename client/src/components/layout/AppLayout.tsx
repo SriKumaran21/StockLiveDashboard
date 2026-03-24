@@ -217,13 +217,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             {user && (
               <div className="flex items-center gap-2 pl-2"
                 style={{ borderLeft: '1px solid hsl(var(--))' }}>
-                <div className="hidden sm:block text-right">
+                <div className="hidden md:block text-right">
                   <p className="text-muted-foreground uppercase tracking-wider" style={{ fontSize: 9, fontWeight: 600 }}>Balance</p>
                   <p className="text-foreground font-bold" style={{ fontSize: 13, fontFamily: 'JetBrains Mono' }}>
                     {formatCurrency(Number(user.balance))}
                   </p>
                 </div>
-                <button onClick={() => setAddFundsOpen(true)} className="btn-primary">Add Funds</button>
+                <button onClick={() => setAddFundsOpen(true)} className="btn-primary" style={{ fontSize: 12, padding: '6px 12px', whiteSpace: 'nowrap' }}>
+                  <span className="hidden sm:inline">Add Funds</span>
+                  <span className="sm:hidden">+ Funds</span>
+                </button>
               </div>
             )}
           </div>

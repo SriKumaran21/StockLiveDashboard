@@ -127,19 +127,6 @@ export function ExplorePage() {
 
       {/* Stock list */}
       <div style={{ background: '#161C27', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
-        {/* Column headers */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: '2.5fr 1fr 80px 100px 44px',
-          padding: '10px 20px', gap: 8,
-          borderBottom: '1px solid rgba(255,255,255,0.04)',
-        }}>
-          {['Stock','Price','Chart','Change',''].map(h => (
-            <p key={h} style={{ fontSize: 10, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              {h}
-            </p>
-          ))}
-        </div>
-
         {isLoading ? (
           <div style={{ padding: '40px 0', display: 'flex', justifyContent: 'center' }}>
             <div className="animate-pulse" style={{ color: '#6B7280', fontSize: 12 }}>Loading stocks…</div>
@@ -163,15 +150,14 @@ export function ExplorePage() {
               onMouseEnter={() => setHovered(stock.symbol)}
               onMouseLeave={() => setHovered(null)}
               style={{
-                display: 'grid', gridTemplateColumns: '2.5fr 1fr 80px 100px 44px',
-                padding: '12px 20px', gap: 8, cursor: 'pointer',
+                padding: '12px 16px', cursor: 'pointer',
                 borderBottom: i < filtered.length-1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
                 background: isHov ? '#1E2738' : 'transparent',
                 transition: 'background 150ms',
-                alignItems: 'center',
               }}>
-              {/* Stock info */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+              {/* Row: icon+name | sparkline | change | star */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {/* Icon */}
                 <div style={{
                   width: 36, height: 36, borderRadius: 10, flexShrink: 0,
                   background: `hsl(${stock.symbol.charCodeAt(0) * 15 % 360}, 40%, 25%)`,
@@ -180,62 +166,58 @@ export function ExplorePage() {
                 }}>
                   {stock.symbol.replace('.NS','').replace('.BO','').slice(0,2)}
                 </div>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+
+                {/* Name */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
                     <p style={{ fontSize: 13, fontWeight: 700, fontFamily: 'Manrope', color: '#E5E7EB' }}>
                       {stock.symbol.replace('.NS','').replace('.BO','')}
                     </p>
                     {(stock as any).sector && (
                       <span style={{
-                        fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 4,
+                        fontSize: 9, fontWeight: 600, padding: '1px 5px', borderRadius: 4,
                         background: 'rgba(59,130,246,0.1)', color: '#3B82F6',
-                        textTransform: 'uppercase', letterSpacing: '0.04em',
+                        textTransform: 'uppercase',
                       }}>
                         {(stock as any).sector}
                       </span>
                     )}
                   </div>
-                  <p style={{ fontSize: 11, color: '#6B7280' }} className="truncate">{stock.company}</p>
+                  <p style={{ fontSize: 11, color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{stock.company}</p>
                 </div>
+
+                {/* Sparkline — hidden on very small screens via inline */}
+                <div className="hidden sm:block">
+                  <MiniSparkline symbol={stock.symbol} />
+                </div>
+
+                {/* Price + change */}
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, fontFamily: 'JetBrains Mono', color: '#E5E7EB' }}>
+                    {formatCurrency(price)}
+                  </p>
+                  <p style={{ fontSize: 11, fontWeight: 700, fontFamily: 'JetBrains Mono',
+                    color: isUp ? '#22C55E' : '#EF4444' }}>
+                    {isUp ? '+' : ''}{pct.toFixed(2)}%
+                  </p>
+                </div>
+
+                {/* Watchlist star */}
+                <button
+                  onClick={e => toggleWatchlist(e, stock.symbol, stock.company)}
+                  style={{
+                    width: 32, height: 32, borderRadius: 8, border: 'none', flexShrink: 0,
+                    background: inWL ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.04)',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 150ms',
+                  }}>
+                  <Star style={{
+                    width: 14, height: 14,
+                    color: inWL ? '#F59E0B' : '#6B7280',
+                    fill: inWL ? '#F59E0B' : 'none',
+                  }} />
+                </button>
               </div>
-
-              {/* Price */}
-              <p style={{ fontSize: 13, fontWeight: 700, fontFamily: 'JetBrains Mono', color: '#E5E7EB' }}>
-                {formatCurrency(price)}
-              </p>
-
-              {/* Sparkline */}
-              <MiniSparkline symbol={stock.symbol} />
-
-              {/* Change badge */}
-              <div style={{
-                padding: '5px 10px', borderRadius: 8, textAlign: 'center',
-                background: isUp ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
-              }}>
-                <p style={{ fontSize: 12, fontWeight: 700, fontFamily: 'JetBrains Mono',
-                  color: isUp ? '#22C55E' : '#EF4444' }}>
-                  {isUp ? '+' : ''}{pct.toFixed(2)}%
-                </p>
-                <p style={{ fontSize: 10, color: isUp ? '#22C55E' : '#EF4444', fontFamily: 'JetBrains Mono' }}>
-                  {isUp ? '+' : ''}{formatCurrency(Math.abs(chg))}
-                </p>
-              </div>
-
-              {/* Watchlist star */}
-              <button
-                onClick={e => toggleWatchlist(e, stock.symbol, stock.company)}
-                style={{
-                  width: 32, height: 32, borderRadius: 8, border: 'none',
-                  background: inWL ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.04)',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'all 150ms',
-                }}>
-                <Star style={{
-                  width: 14, height: 14,
-                  color: inWL ? '#F59E0B' : '#6B7280',
-                  fill: inWL ? '#F59E0B' : 'none',
-                }} />
-              </button>
             </div>
           );
         })}
