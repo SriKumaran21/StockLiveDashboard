@@ -48,6 +48,9 @@ export const usersRelations = relations(users, ({ many }) => ({
   watchlists: many(watchlists),
   transactions: many(transactions),
   holdings: many(holdings),
+  sips: many(sips),
+  priceAlerts: many(priceAlerts),
+  chatMessages: many(chatMessages),
 }));
 
 export const watchlistsRelations = relations(watchlists, ({ one }) => ({

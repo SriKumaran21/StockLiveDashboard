@@ -3,7 +3,7 @@ import type { Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { db } from "./db";
-import { users, holdings, transactions, priceAlerts } from "@shared/schema";
+import { users, watchlists, holdings, transactions, priceAlerts, sips, chatMessages } from "@shared/schema";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import session from "express-session";
@@ -474,6 +474,11 @@ export async function registerRoutes(
     storage.getChatMessages(50).then((messages) => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: "chat_history", data: messages }));
+      }
+    }).catch(err => {
+      console.error("[WS] Failed to fetch chat history:", err);
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "chat_history", data: [] }));
       }
     });
 

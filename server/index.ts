@@ -30,7 +30,6 @@ export function log(message: string, source = "express") {
     second: "2-digit",
     hour12: true,
   });
-
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
@@ -52,7 +51,6 @@ app.use((req, res, next) => {
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
-
       log(logLine);
     }
   });
@@ -60,24 +58,39 @@ app.use((req, res, next) => {
   next();
 });
 
+// ── Global safety nets ────────────────────────────────────────────────────────
+// Prevent ANY unhandled promise rejection (e.g. DB quota errors) from crashing.
+process.on("unhandledRejection", (reason: any) => {
+  console.error("[server] Unhandled rejection (non-fatal):", reason?.message ?? reason);
+});
+
+// Friendly message for EADDRINUSE so the user knows exactly what to run.
+process.on("uncaughtException", (err: any) => {
+  if (err.code === "EADDRINUSE") {
+    const port = Number(process.env.PORT) || 5051;
+    console.error(
+      `\n❌  Port ${port} is already in use — another server is still running.\n` +
+      `   Kill it first, then restart:\n\n` +
+      `   lsof -ti :${port} | xargs kill -9\n`
+    );
+    process.exit(1);
+  }
+  console.error("[server] Uncaught exception (non-fatal):", err?.message ?? err);
+});
+
 (async () => {
   await registerRoutes(httpServer, app);
 
-  // Error handling middleware
+  // Global error-handling middleware
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-
     console.error("Internal Server Error:", err);
-
-    if (res.headersSent) {
-      return next(err);
-    }
-
+    if (res.headersSent) return next(err);
     return res.status(status).json({ message });
   });
 
-  // Setup static serving or Vite
+  // Serve static files in production, or Vite dev server otherwise
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);
   } else {
@@ -85,8 +98,20 @@ app.use((req, res, next) => {
     await setupVite(httpServer, app);
   }
 
-  // --- UPDATED LISTEN BLOCK FOR RAILWAY & LOCAL ---
-  const port = Number(process.env.PORT) || 5050;
+  const port = Number(process.env.PORT) || 5051;
+
+  // Catch EADDRINUSE at the server level too
+  httpServer.on("error", (err: any) => {
+    if (err.code === "EADDRINUSE") {
+      console.error(
+        `\n❌  Port ${port} is already in use — another server is still running.\n` +
+        `   Kill it first, then restart:\n\n` +
+        `   lsof -ti :${port} | xargs kill -9\n`
+      );
+      process.exit(1);
+    }
+    console.error("[server] HTTP server error:", err);
+  });
 
   httpServer.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
