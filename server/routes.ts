@@ -522,10 +522,9 @@ export async function registerRoutes(
     });
   });
 
-  // ── Live Price Push every 15s ───────────────────────────
-  // Finnhub free tier: 60 calls/min — 8 stocks + 3 indices = 11 calls per tick
-  setInterval(async () => {
-    if (wss.clients.size === 0) return; // skip if no clients connected
+  // ── Live Price Push (Triggered via API for request-driven architecture) ──
+  app.post('/api/cron/prices', async (req, res) => {
+    if (wss.clients.size === 0) return res.json({ message: "No clients connected, skipping" });
 
     try {
       // Push stock prices — staggered to avoid rate limiting
@@ -563,10 +562,12 @@ export async function registerRoutes(
           if (client.readyState === WebSocket.OPEN) client.send(payload);
         });
       }
+      res.json({ message: "Price updates pushed successfully" });
     } catch (e) {
       console.error("[WS] Price push failed:", e);
+      res.status(500).json({ message: "Failed to push price updates" });
     }
-  }, 15000);
+  });
 
 
 
@@ -603,10 +604,11 @@ export async function registerRoutes(
     res.json(sip);
   });
 
-  // ── SIP Cron — runs every minute, executes due SIPs ──────
-  setInterval(async () => {
+  // ── SIP Execution Endpoint (Request-driven replacement for Cron) ──
+  app.post('/api/cron/sips', async (req, res) => {
     try {
       const dueSips = await storage.getDueSips();
+      const results = [];
       for (const sip of dueSips) {
         try {
           const stock = DEFAULT_STOCKS.find(s => s.symbol === sip.symbol);
@@ -624,14 +626,28 @@ export async function registerRoutes(
           });
           await storage.updateSipNextRun(sip.id, calcNextRun(sip.frequency));
           console.log(`[SIP] Executed ${sip.symbol} for user ${sip.userId} — ${quantity} shares @ ₹${q.price}`);
+          results.push({ sipId: sip.id, status: 'success', symbol: sip.symbol });
         } catch (e) {
           console.error(`[SIP] Failed for ${sip.id}:`, e);
+          results.push({ sipId: sip.id, status: 'failed', error: String(e) });
         }
       }
+      res.json({ message: "SIP processing complete", processed: results.length, results });
     } catch (e) {
-      console.error('[SIP] Cron error:', e);
+      console.error('[SIP] Execution error:', e);
+      res.status(500).json({ message: "SIP execution failed" });
     }
-  }, 60 * 1000);
+  });
+
+  // ── Chat History Endpoint ───────────────────────────────
+  app.get('/api/chat/messages', async (req, res) => {
+    try {
+      const messages = await storage.getChatMessages(50);
+      res.json(messages);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to fetch chat history" });
+    }
+  });
 
   // ── AI Assistant ─────────────────────────────────────────
   app.post('/api/ai/analyze', async (req, res) => {
